@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2314110d' stroke='%23d4a437' stroke-width='4'/%3E%3Cpath d='M32 32 L47 21' stroke='%23f0c96a' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23d4a437'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 /* ═══════════ КИНОМЕТР · «латунный кинозал» ═══════════ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -18,7 +18,7 @@
   --text:#efe6d8; --mut:#a89f90;
   --brass:#d4a437; --brass2:#f0c96a; --brass3:#8a6a1f;
   --imdb:#f5c518; --red:#c2453a; --green:#8fbf7f;
-  --disp:'Bebas Neue','Arial Narrow',sans-serif;
+  --disp:'Playfair Display','Georgia','Times New Roman',serif;
   --body:'Manrope','Segoe UI',sans-serif;
   --mono:'JetBrains Mono','Consolas',monospace;
 }
@@ -29,7 +29,7 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .mono{font-family:var(--mono)}
-.disp{font-family:var(--disp);font-weight:400;letter-spacing:.015em}
+.disp{font-family:var(--disp);font-weight:800;letter-spacing:.01em}
 
 /* ── атмосфера: зерно, пятна света, пыль, киноленты по краям ── */
 .grain{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:.05;
@@ -68,7 +68,7 @@ button{font-family:inherit}
 /* ── шапка ── */
 #hdr{position:sticky;top:0;z-index:50;background:rgba(14,12,10,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .hdr-in{display:flex;align-items:center;justify-content:space-between;height:66px}
-.logo{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-size:24px;letter-spacing:.06em}
+.logo{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.05em}
 .logo b{color:var(--brass)}
 .logo svg{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .logo:hover svg{transform:rotate(150deg)}
@@ -104,7 +104,7 @@ button{font-family:inherit}
   border:1px solid rgba(212,164,55,.4);padding:7px 15px;border-radius:100px;margin-bottom:20px;background:rgba(212,164,55,.07)}
 .rec{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px rgba(194,69,58,.9);animation:blink 1.4s ease infinite}
 @keyframes blink{50%{opacity:.25}}
-.hero h1{font-size:clamp(46px,6.4vw,84px);line-height:.95;margin-bottom:16px;letter-spacing:.01em}
+.hero h1{font-size:clamp(42px,5.8vw,76px);line-height:1.03;margin-bottom:16px}
 .hero h1 em{font-style:normal;color:var(--brass2)}
 .hero-meta{color:var(--mut);font-size:13.5px;margin-bottom:15px;letter-spacing:.05em}
 .hero-genres{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
@@ -145,7 +145,7 @@ button{font-family:inherit}
   font:600 13px var(--body);cursor:pointer;transition:.2s}
 .chip:hover{border-color:var(--brass);color:var(--brass2)}
 .chip.on{background:var(--brass);border-color:var(--brass);color:#171310}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:24px}
 .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:70px 20px;border:1px dashed var(--line2);border-radius:14px}
 
 /* ── карточка фильма ── */
@@ -154,7 +154,7 @@ button{font-family:inherit}
 .card:hover{transform:translateY(-7px);border-color:rgba(212,164,55,.6);
   box-shadow:0 18px 44px rgba(0,0,0,.5),0 10px 34px rgba(212,164,55,.15)}
 .card-stripe{height:6px}
-.card-cover{position:relative;aspect-ratio:2/3;overflow:hidden;background:var(--bg2)}
+.card-cover{position:relative;aspect-ratio:3/4;overflow:hidden;background:var(--bg2)}
 .card-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
 .card:hover .card-cover img{transform:scale(1.06)}
 .card-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,12,10,.14),transparent 34%,transparent 70%,rgba(14,12,10,.55))}
@@ -201,7 +201,7 @@ button{font-family:inherit}
 .skl{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:13px}
 .skl::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(212,164,55,.08) 50%,transparent 70%);animation:shimmer 1.5s infinite}
 @keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.skl-cover{aspect-ratio:2/3;background:var(--panel2)}
+.skl-cover{aspect-ratio:3/4;background:var(--panel2)}
 .skl-line{height:12px;border-radius:6px;background:var(--panel2);margin:12px 16px 0}
 .skl-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:22px;margin-top:30px}
 .load-state{padding:56px 0 30px}
@@ -234,7 +234,7 @@ button{font-family:inherit}
 .m-desc{color:#cfc5b4;font-size:15px;border-left:3px solid var(--brass);padding-left:14px;margin-bottom:24px;white-space:pre-line}
 .m-scores{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
 .m-verdict{flex:1;min-width:230px;padding-top:12px}
-.verdict{font-family:var(--disp);font-weight:400;font-size:19px;letter-spacing:.09em;text-transform:uppercase;
+.verdict{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.1em;text-transform:uppercase;
   display:inline-block;border:2.5px solid currentColor;border-radius:9px;padding:8px 16px;margin:16px 0 18px;
   transform:rotate(-2.4deg);opacity:.93;transition:transform .3s ease}
 .verdict:hover{transform:rotate(0) scale(1.03)}
@@ -915,9 +915,6 @@ function loginHTML(){
     + '<div class="f" style="margin-top:14px"><label class="lbl">Пароль</label><input class="inp" name="pass" type="password" autocomplete="current-password" required></div>'
     + '<button class="btn btn-gold btn-wide" type="submit">Войти в админку</button>'
     + '</form>'
-    + '<p class="hint mono">' + (S.db
-        ? 'Подключена база MySQL. Стандартный вход: admin / kinometr'
-        : 'Стандартный вход: admin / kinometr') + '</p>'
     + '</div></div></div>';
 }
 function doLogin(ev){
