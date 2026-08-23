@@ -1,20 +1,872 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="КИНОМЕТР — каталог фильмов с оценками админа и рейтингами IMDb. Админ-панель, импорт каталога, MySQL на AwardSpace." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2313100d'/%3E%3Cpath d='M6 22a10 10 0 0 1 20 0' fill='none' stroke='%23e2a64b' stroke-width='2.6' stroke-linecap='round'/%3E%3Cline x1='16' y1='22' x2='22' y2='13.5' stroke='%23f1e8d9' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='22' r='2.4' fill='%23e2a64b'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <title>КИНОМЕТР — оценки фильмов: админ и IMDb</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КИНОМЕТР — оценки фильмов</title>
+<meta name="description" content="Каталог фильмов с оценками: вердикт админа и рейтинг IMDb.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111112'/%3E%3Cpath d='M32 12v40M32 12l-13 13M32 12l13 13' stroke='%23e8b84b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d0f; --bg2:#131318; --panel:#17171d; --panel2:#1d1d24;
+  --line:#26262e; --line2:#32323c;
+  --ink:#f2efe6; --muted:#98949f; --faint:#6b6774;
+  --gold:#e8b84b; --gold2:#f6d488; --gold-dim:#8a6c2c;
+  --green:#4fc98a; --red:#e2554d; --blue:#5aa7e8;
+  --font-d:'Unbounded',sans-serif; --font-b:'Manrope',sans-serif; --font-m:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--gold);color:#161207}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}::-webkit-scrollbar-track{background:var(--bg)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+img{display:block;max-width:100%}
+.mono{font-family:var(--font-m)}
+.d1{font-family:var(--font-d);font-weight:900;font-size:clamp(30px,4.6vw,58px);line-height:1.08;letter-spacing:-.5px}
+.d2{font-family:var(--font-d);font-weight:700;font-size:clamp(20px,2.4vw,30px);line-height:1.15}
+.d3{font-family:var(--font-d);font-weight:700;font-size:15px;letter-spacing:.2px}
+.label{font-family:var(--font-m);font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold)}
+.sub{color:var(--muted)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.sec{padding:72px 0 24px}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:26px;flex-wrap:wrap}
+
+/* ---- ambient ---- */
+#bg{position:fixed;inset:0;z-index:-2;background:radial-gradient(1100px 560px at 82% -12%,rgba(232,184,75,.11),transparent 62%),radial-gradient(800px 480px at -8% 34%,rgba(90,167,232,.07),transparent 60%),var(--bg)}
+#spot{position:fixed;left:0;top:0;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(232,184,75,.10),transparent 62%);z-index:-1;pointer-events:none;transform:translate(-50%,-50%);transition:opacity .4s;opacity:.7}
+#grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E")}
+
+/* ---- header ---- */
+.hdr{position:sticky;top:0;z-index:40;background:rgba(13,13,15,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.hdr-in{display:flex;align-items:center;gap:18px;height:66px}
+.logo{display:flex;align-items:center;gap:12px;font-family:var(--font-d);font-weight:900;font-size:17px;letter-spacing:.5px;cursor:pointer;background:none;border:0;color:var(--ink)}
+.logo svg{transition:transform .5s cubic-bezier(.2,1.4,.4,1)}
+.logo:hover svg{transform:rotate(180deg)}
+.logo b{color:var(--gold)}
+.hdr-nav{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-link{font-family:var(--font-m);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:9px 14px;border:1px solid transparent;border-radius:10px;color:var(--muted);transition:.25s;cursor:pointer;background:none}
+.nav-link:hover{color:var(--ink);border-color:var(--line2)}
+.nav-link.on{color:var(--gold);border-color:var(--gold-dim);background:rgba(232,184,75,.07)}
+.mode{display:flex;align-items:center;gap:7px;font-family:var(--font-m);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:7px 11px;border-radius:999px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 2.2s infinite}
+.dot.ok{background:var(--green)}.dot.demo{background:var(--gold)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,184,75,.5)}55%{box-shadow:0 0 0 7px rgba(232,184,75,0)}}
+
+/* ---- buttons / inputs ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:800;font-size:14px;padding:13px 22px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:.25s;letter-spacing:.2px;background:none;color:var(--ink)}
+.btn-gold{background:var(--gold);color:#171204;box-shadow:0 8px 24px rgba(232,184,75,.22)}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 14px 30px rgba(232,184,75,.3)}
+.btn-ghost{border-color:var(--line2);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--gold-dim);background:rgba(232,184,75,.06);transform:translateY(-2px)}
+.btn-danger{border-color:rgba(226,85,77,.4);color:var(--red)}
+.btn-danger:hover{background:rgba(226,85,77,.1);border-color:var(--red)}
+.btn-sm{padding:8px 14px;font-size:12.5px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.inp,select.inp,textarea.inp{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:12px 14px;font-family:var(--font-b);font-size:14.5px;transition:.2s;outline:none}
+.inp:focus{border-color:var(--gold-dim);box-shadow:0 0 0 3px rgba(232,184,75,.13)}
+textarea.inp{resize:vertical;min-height:96px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.field label{font-family:var(--font-m);font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+/* ---- ticker ---- */
+.ticker{border-bottom:1px solid var(--line);overflow:hidden;background:var(--bg2);position:relative}
+.ticker-track{display:flex;width:max-content;animation:tick 36s linear infinite;padding:9px 0}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-track span{font-family:var(--font-m);font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);padding:0 22px;white-space:nowrap}
+.ticker-track b{color:var(--gold);font-weight:700}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* ---- latest ---- */
+.latest{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:44px;align-items:center;margin-top:34px}
+@media(max-width:900px){.latest{grid-template-columns:1fr;gap:28px}}
+.poster-frame{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 30px 70px rgba(0,0,0,.55);transform:rotate(-1.6deg);transition:transform .5s cubic-bezier(.2,1.2,.4,1)}
+.poster-frame:hover{transform:rotate(0) scale(1.015)}
+.poster-frame img{width:100%;aspect-ratio:2/3;object-fit:cover}
+.poster-badge{position:absolute;top:14px;left:14px;font-family:var(--font-m);font-size:10.5px;letter-spacing:2px;text-transform:uppercase;background:rgba(13,13,15,.85);border:1px solid var(--gold-dim);color:var(--gold);padding:6px 11px;border-radius:8px}
+.score-chip{display:inline-flex;align-items:baseline;gap:5px;font-family:var(--font-m);font-weight:700;padding:5px 11px;border-radius:9px;border:1px solid;font-size:14px}
+.score-chip small{font-size:10px;opacity:.65;font-weight:500}
+.gauge-wrap{display:flex;align-items:center;gap:36px;margin:26px 0;flex-wrap:wrap}
+.gauge{position:relative;width:190px;flex:0 0 auto}
+.gauge-num{position:absolute;left:0;right:0;top:62px;text-align:center;font-family:var(--font-d);font-weight:900;font-size:42px;color:var(--gold);text-shadow:0 0 30px rgba(232,184,75,.35)}
+.gauge-num small{display:block;font-family:var(--font-m);font-size:10px;letter-spacing:2.5px;color:var(--muted);font-weight:500;margin-top:2px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--muted);font-size:14.5px;margin:14px 0 20px}
+.meta-row b{color:var(--ink);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border:1px solid var(--line2);border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;background:none}
+.chip:hover{border-color:var(--gold-dim);color:var(--ink);transform:translateY(-1px)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#171204;font-weight:800}
+.chip .n{font-family:var(--font-m);font-size:11px;opacity:.65}
+.genres{display:flex;flex-wrap:wrap;gap:8px}
+.gpill{font-family:var(--font-m);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;padding:5px 11px;border-radius:7px;border:1px solid}
+
+/* ---- stats ---- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px}
+@media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--bg2));border-radius:16px;padding:22px 24px;transition:.3s;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);opacity:0;transition:.3s}
+.stat:hover{transform:translateY(-4px);border-color:var(--line2)}
+.stat:hover::after{opacity:1}
+.stat .v{font-family:var(--font-d);font-weight:900;font-size:30px;color:var(--gold2)}
+.stat .k{font-family:var(--font-m);font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+/* ---- catalog ---- */
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+.search{position:relative;flex:1;min-width:230px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.search .inp{padding-left:42px}
+.sortsel{width:auto;min-width:200px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden;cursor:pointer;transition:transform .3s cubic-bezier(.2,1,.3,1),border-color .3s,box-shadow .3s;position:relative}
+.card:hover{transform:translateY(-6px);border-color:var(--gold-dim);box-shadow:0 22px 44px rgba(0,0,0,.5)}
+.card-cover{aspect-ratio:2/3;overflow:hidden;background:var(--panel2);position:relative}
+.card-cover img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,1,.3,1)}
+.card:hover .card-cover img{transform:scale(1.07)}
+.card-score{position:absolute;top:10px;right:10px;font-family:var(--font-m);font-weight:700;font-size:14px;background:rgba(13,13,15,.88);border:1px solid;padding:5px 10px;border-radius:9px;backdrop-filter:blur(4px)}
+.card-imdb{position:absolute;bottom:10px;left:10px;font-family:var(--font-m);font-size:10.5px;background:rgba(13,13,15,.85);color:#f5c518;border:1px solid rgba(245,197,24,.4);padding:4px 8px;border-radius:7px}
+.card-body{padding:14px 15px 16px}
+.card-title{font-weight:800;font-size:15.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-family:var(--font-m);font-size:11px;color:var(--faint);letter-spacing:.8px;margin-top:7px;text-transform:uppercase}
+.card-genres{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.card-genres i{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line2);padding:3px 8px;border-radius:6px}
+.empty{border:1px dashed var(--line2);border-radius:18px;padding:64px 24px;text-align:center;color:var(--muted)}
+.empty .d3{color:var(--ink);margin-bottom:8px}
+
+/* ---- reveal ---- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+
+/* ---- footer ---- */
+.ftr{margin-top:90px;border-top:1px solid var(--line);padding:34px 0 44px;color:var(--faint)}
+.ftr-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;font-size:13.5px}
+.ftr .mono{font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
+
+/* ---- modal ---- */
+.overlay{position:fixed;inset:0;background:rgba(8,8,10,.78);backdrop-filter:blur(6px);z-index:70;display:flex;align-items:center;justify-content:center;padding:22px;animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;animation:pop .35s cubic-bezier(.2,1.2,.4,1);position:relative}
+@keyframes pop{from{opacity:0;transform:translateY(24px) scale(.97)}}
+.modal-x{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:rgba(13,13,15,.7);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;z-index:2}
+.modal-x:hover{color:var(--ink);border-color:var(--gold-dim);transform:rotate(90deg)}
+.mv{display:grid;grid-template-columns:300px 1fr}
+@media(max-width:760px){.mv{grid-template-columns:1fr}}
+.mv-cover{position:relative;min-height:100%}
+.mv-cover img{width:100%;height:100%;object-fit:cover;aspect-ratio:2/3}
+@media(max-width:760px){.mv-cover img{aspect-ratio:16/10}}
+.mv-body{padding:34px 34px 30px}
+@media(max-width:760px){.mv-body{padding:24px}}
+.mv-scores{display:flex;gap:22px;margin:22px 0;flex-wrap:wrap}
+.mv-score{flex:1;min-width:180px;border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--bg2)}
+.mv-score .v{font-family:var(--font-d);font-weight:900;font-size:34px}
+.mv-score .k{font-family:var(--font-m);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.bar{height:6px;background:var(--line);border-radius:4px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.verdict{margin:22px 0;padding:16px 18px;border-left:3px solid var(--gold);background:rgba(232,184,75,.06);border-radius:0 12px 12px 0;font-size:15px;color:var(--ink)}
+.verdict b{color:var(--gold)}
+
+/* ---- toasts ---- */
+#toasts{position:fixed;bottom:22px;right:22px;z-index:90;display:flex;flex-direction:column;gap:10px;max-width:min(360px,90vw)}
+.toast{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--gold);border-radius:12px;padding:13px 16px;font-size:14px;font-weight:600;box-shadow:0 14px 34px rgba(0,0,0,.5);animation:tin .35s cubic-bezier(.2,1.2,.4,1)}
+.toast.err{border-left-color:var(--red)}
+.toast.ok{border-left-color:var(--green)}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}}
+.toast.out{opacity:0;transform:translateX(30px);transition:.3s}
+
+/* ---- admin ---- */
+.login-wrap{min-height:calc(100vh - 200px);display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.login-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:36px;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 26px;border-bottom:1px solid var(--line);padding-bottom:0}
+.tab{font-family:var(--font-m);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:12px 18px;border:1px solid transparent;border-bottom:none;border-radius:11px 11px 0 0;color:var(--muted);cursor:pointer;transition:.2s;background:none;position:relative;top:1px}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--gold);background:var(--panel);border-color:var(--line);border-bottom-color:var(--panel)}
+.panel-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+.mrow{display:grid;grid-template-columns:52px 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:13px;margin-bottom:10px;background:var(--bg2);transition:.2s}
+.mrow:hover{border-color:var(--line2);transform:translateX(4px)}
+@media(max-width:760px){.mrow{grid-template-columns:44px 1fr;row-gap:8px}}
+.mrow img{width:52px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line2);background:var(--panel2)}
+.mrow .t{font-weight:800;font-size:14.5px}
+.mrow .m{font-family:var(--font-m);font-size:10.5px;color:var(--faint);letter-spacing:.8px;margin-top:3px;text-transform:uppercase}
+.form-grid{display:grid;grid-template-columns:1fr 300px;gap:30px;align-items:start}
+@media(max-width:960px){.form-grid{grid-template-columns:1fr}}
+.preview-card{position:sticky;top:86px}
+.drop{border:2px dashed var(--line2);border-radius:16px;padding:44px 24px;text-align:center;cursor:pointer;transition:.25s;background:var(--bg2)}
+.drop:hover,.drop.over{border-color:var(--gold);background:rgba(232,184,75,.05)}
+.drop .d3{margin:12px 0 4px}
+.imp-item{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:9px;background:var(--bg2);font-size:14px}
+.imp-item .st{font-family:var(--font-m);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:6px;white-space:nowrap}
+.imp-item .st.ok{color:var(--green);border:1px solid rgba(79,201,138,.35)}
+.imp-item .st.bad{color:var(--red);border:1px solid rgba(226,85,77,.35)}
+.arow{display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center;padding:13px 16px;border:1px solid var(--line);border-radius:13px;margin-bottom:10px;background:var(--bg2)}
+@media(max-width:640px){.arow{grid-template-columns:1fr auto}}
+.role{font-family:var(--font-m);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 10px;border-radius:7px}
+.role.root{color:var(--gold);border:1px solid var(--gold-dim);background:rgba(232,184,75,.08)}
+.role.admin{color:var(--blue);border:1px solid rgba(90,167,232,.35)}
+.hint{font-size:13px;color:var(--faint);margin-top:10px;line-height:1.6}
+.hint code{font-family:var(--font-m);color:var(--gold);background:rgba(232,184,75,.08);padding:2px 6px;border-radius:5px;font-size:12px}
+.spin{width:16px;height:16px;border:2px solid rgba(232,184,75,.25);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:14px;padding:80px 0;color:var(--muted);font-family:var(--font-m);font-size:12px;letter-spacing:2px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="bg"></div><div id="spot"></div><div id="grain"></div>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* ================= КИНОМЕТР — весь сайт в одном файле =================
+   Данные: MySQL через api.php (лежит рядом с этим файлом на AwardSpace).
+   Если сервер БД недоступен — автоматический демо-режим (localStorage).  */
+
+/* ----------------------------- настройки ----------------------------- */
+var API = "api.php";
+var LS_MOVIES = "kinometr_movies_v1";
+var LS_TOKEN  = "kinometr_token";
+var COVER_FALLBACK = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450"><rect width="300" height="450" fill="#1b1b22"/><rect x="0" y="0" width="300" height="26" fill="#111114"/><rect x="0" y="424" width="300" height="26" fill="#111114"/><g fill="#e8b84b" opacity=".9"><circle cx="24" cy="13" r="5"/><circle cx="64" cy="13" r="5"/><circle cx="104" cy="13" r="5"/><circle cx="144" cy="13" r="5"/><circle cx="184" cy="13" r="5"/><circle cx="224" cy="13" r="5"/><circle cx="264" cy="13" r="5"/><circle cx="24" cy="437" r="5"/><circle cx="64" cy="437" r="5"/><circle cx="104" cy="437" r="5"/><circle cx="144" cy="437" r="5"/><circle cx="184" cy="437" r="5"/><circle cx="224" cy="437" r="5"/><circle cx="264" cy="437" r="5"/></g><text x="150" y="218" font-family="monospace" font-size="15" fill="#6b6774" text-anchor="middle">НЕТ ПОСТЕРА</text><path d="M150 244v60M150 244l-18 18M150 244l18 18" stroke="#e8b84b" stroke-width="6" stroke-linecap="round" fill="none"/></svg>');
+
+/* ------------------------------ утилиты ------------------------------ */
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function clampScore(v){ v=parseFloat(v); if(!isFinite(v)) v=0; return Math.round(Math.min(10,Math.max(0,v))*10)/10; }
+function fmt1(v){ return (Math.round(v*10)/10).toFixed(1).replace(".",","); }
+function plural(n,a,b,c){ n=Math.abs(n)%100; var d=n%10; if(n>10&&n<20) return c; if(d>1&&d<5) return b; if(d===1) return a; return c; }
+function parseGenres(g){ if(Array.isArray(g)) return g.map(function(x){return String(x).trim();}).filter(Boolean); return String(g||"").split(/[,;]/).map(function(x){return x.trim();}).filter(Boolean); }
+function fmtDur(min){ min=parseInt(min)||0; if(!min) return "—"; return Math.floor(min/60)+" ч "+(min%60)+" мин"; }
+function scoreColor(v){ if(v>=8) return "#4fc98a"; if(v>=6.5) return "#e8b84b"; if(v>=5) return "#e08a4a"; return "#e2554d"; }
+function genreHue(g){ var h=0; for(var i=0;i<g.length;i++) h=(h*31+g.charCodeAt(i))>>>0; return h%360; }
+function gpill(g){ var h=genreHue(g); return '<span class="gpill" style="color:hsl('+h+',72%,70%);border-color:hsl('+h+',45%,32%);background:hsl('+h+',50%,14%)">'+esc(g)+'</span>'; }
+function verdictFor(v){ if(v>=9) return "Эталон. Пересматривать раз в год — обязательно."; if(v>=8) return "Сильное кино. Смотреть на большом экране."; if(v>=7) return "Достойно вечера. Своих минут точно стоит."; if(v>=6) return "Спорно, но есть за что зацепиться."; if(v>=5) return "Скорее фон, чем событие."; return "Мимо. Время не вернуть."; }
+function coverImg(url, cls){ var u = url && String(url).trim() ? url : COVER_FALLBACK; return '<img class="'+(cls||"")+'" src="'+esc(u)+'" alt="" loading="lazy" onerror="this.onerror=null;this.src=COVER_FALLBACK">'; }
+function debounce(fn,ms){ var t; return function(){ var a=arguments,c=this; clearTimeout(t); t=setTimeout(function(){fn.apply(c,a);},ms); }; }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+/* --------------------------- демо-данные ----------------------------- */
+var SEED = [
+ {title:"Дюна: Часть вторая",original_title:"Dune: Part Two",year:2024,country:"США",director:"Дени Вильнёв",duration:166,genres:["фантастика","приключения","драма"],description:"Пол Атрейдес объединяется с фременами, чтобы отомстить за свою семью и предотвратить страшное будущее, которое видит лишь он один.",cover_url:"https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg",admin_score:8.4,imdb_score:8.5},
+ {title:"Оппенгеймер",original_title:"Oppenheimer",year:2023,country:"США, Великобритания",director:"Кристофер Нолан",duration:180,genres:["биография","драма","триллер"],description:"История «отца атомной бомбы» Роберта Оппенгеймера: проект «Манхэттен», триумф науки и моральная пропасть под ногами её творцов.",cover_url:"https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",admin_score:8.6,imdb_score:8.3},
+ {title:"Бедные-несчастные",original_title:"Poor Things",year:2023,country:"Ирландия, Великобритания, США",director:"Йоргос Лантимос",duration:141,genres:["комедия","фантастика","мелодрама"],description:"Белла Бакстер возвращена к жизни гениальным и эксцентричным учёным и жадно познаёт мир — дерзкая одиссея самопознания.",cover_url:"https://image.tmdb.org/t/p/w500/kCGlIMHnOm8JPXq3rXM6c5wMxcT.jpg",admin_score:7.9,imdb_score:7.9},
+ {title:"Интерстеллар",original_title:"Interstellar",year:2014,country:"США, Великобритания",director:"Кристофер Нолан",duration:169,genres:["фантастика","драма","приключения"],description:"Земля умирает, и экипаж исследователей отправляется сквозь червоточину в поисках нового дома для человечества. Любовь — единственная константа.",cover_url:"https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",admin_score:9.2,imdb_score:8.7},
+ {title:"Начало",original_title:"Inception",year:2010,country:"США, Великобритания",director:"Кристофер Нолан",duration:148,genres:["фантастика","боевик","триллер"],description:"Извлечатель идей Дом Кобб получает задание наоборот: внедрить мысль так глубоко, чтобы жертва приняла её за свою собственную.",cover_url:"https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",admin_score:9.0,imdb_score:8.8},
+ {title:"Паразиты",original_title:"Gisaengchung",year:2019,country:"Южная Корея",director:"Пон Джун-хо",duration:132,genres:["триллер","драма","комедия"],description:"Бедная семья Ким хитростью внедряется в богатый дом Паков. Социальная сатира, которая оборачивается кровавой трагикомедией.",cover_url:"https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",admin_score:8.9,imdb_score:8.5},
+ {title:"Побег из Шоушенка",original_title:"The Shawshank Redemption",year:1994,country:"США",director:"Фрэнк Дарабонт",duration:142,genres:["драма"],description:"Банкир Энди Дюфрейн, осуждённый за убийство, которого не совершал, двадцать лет не теряет надежды — и учит надеяться остальных.",cover_url:"https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",admin_score:9.5,imdb_score:9.1},
+ {title:"Крёстный отец",original_title:"The Godfather",year:1972,country:"США",director:"Фрэнсис Форд Коппола",duration:175,genres:["драма","криминал"],description:"Стареющий глава мафиозного клана передаёт власть младшему сыну Майклу — и тот оказывается тем, кем никогда не хотел стать.",cover_url:"https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",admin_score:9.6,imdb_score:9.2},
+ {title:"Драйв",original_title:"Drive",year:2011,country:"США",director:"Николас Виндинг Рефн",duration:100,genres:["криминал","триллер","драма"],description:"Безымянный каскадёр и ночной водитель влюбляется в соседку — и за одну ночь спускается в неоновый ад Лос-Анджелеса.",cover_url:"https://image.tmdb.org/t/p/w500/602vevIURmpDfzvnErhUv5Os9gv.jpg",admin_score:8.1,imdb_score:7.8},
+ {title:"Одержимость",original_title:"Whiplash",year:2014,country:"США",director:"Дэмьен Шазелл",duration:106,genres:["драма","музыка"],description:"Молодой барабанщик и дирижёр-тиран сходятся в дуэли, где ставка — одержимость величием. Не в темпе, чёрт возьми.",cover_url:"https://image.tmdb.org/t/p/w500/7fn624j5lj3xTme2SgiLCeuedmO.jpg",admin_score:8.7,imdb_score:8.5},
+ {title:"Матрица",original_title:"The Matrix",year:1999,country:"США",director:"Лана и Лилли Вачовски",duration:136,genres:["фантастика","боевик"],description:"Хакер Нео узнаёт, что реальность — симуляция, и присоединяется к повстанцам. Выбор между синей и красной таблеткой.",cover_url:"https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",admin_score:8.8,imdb_score:8.7},
+ {title:"Властелин колец: Возвращение короля",original_title:"The Lord of the Rings: The Return of the King",year:2003,country:"Новая Зеландия, США",director:"Питер Джексон",duration:201,genres:["фэнтези","приключения","драма"],description:"Финал великой трилогии: Фродо и Сэм у Роковой горы, Арагорн принимает свою судьбу, а Средиземье решает, быть ему или нет.",cover_url:"https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",admin_score:9.3,imdb_score:9.0}
+];
+
+/* ------------------------------- состояние --------------------------- */
+var state = {
+  route: "home", movies: [], admins: [], mode: "local", loading: true,
+  search: "", genre: "all", sort: "new",
+  adminTab: "list", editingId: null, importRows: null, importName: "",
+  authed: false
+};
+function getToken(){ return localStorage.getItem(LS_TOKEN)||""; }
+
+/* ------------------------------ API-слой ----------------------------- */
+function apiCall(method, path, body){
+  var opts = { method: method, headers: {} };
+  var tok = getToken();
+  if(tok) opts.headers["X-Auth"] = tok;
+  if(body !== undefined){ opts.headers["Content-Type"]="application/json"; opts.body = JSON.stringify(body); }
+  return fetch(API+path, opts).then(function(r){
+    if(r.status===401){ var e=new Error("401"); e.code=401; throw e; }
+    return r.json().then(function(j){ if(j && j.error){ var e2=new Error(j.error); e2.code=r.status; throw e2; } return j; });
+  });
+}
+function lsLoadMovies(){ try{ var r=JSON.parse(localStorage.getItem(LS_MOVIES)); if(Array.isArray(r)) return r; }catch(e){} return null; }
+function lsSaveMovies(){ try{ localStorage.setItem(LS_MOVIES, JSON.stringify(state.movies)); }catch(e){} }
+
+function refresh(){
+  state.loading = true; render();
+  return apiCall("GET","?p=movies").then(function(r){
+    state.movies = (r && r.movies) || []; state.mode = "api";
+  }).catch(function(){
+    state.mode = "local";
+    var ls = lsLoadMovies();
+    if(ls){ state.movies = ls; }
+    else {
+      var now = Date.now();
+      state.movies = SEED.map(function(m,i){
+        var d=new Date(now - (SEED.length-1-i)*36e5*26);
+        return Object.assign({}, m, { id:"s"+(i+1), created_at: d.toISOString() });
+      });
+      lsSaveMovies();
+    }
+  }).then(function(){
+    state.loading = false; render(); afterRender();
+  });
+}
+function ensureAdmins(){
+  if(state.mode==="api"){
+    return apiCall("GET","?p=admins").then(function(r){ state.admins=(r&&r.admins)||[]; render(); afterRender(); }).catch(function(){ state.authed=false; render(); });
+  }
+  state.admins = [{id:1,login:"admin",role:"root"}]; render(); afterRender();
+  return Promise.resolve();
+}
+
+function saveMovie(data, id){
+  if(state.mode==="api"){
+    var p = id ? apiCall("PUT","?p=movies&id="+id,data) : apiCall("POST","?p=movies",data);
+    return p.then(function(){ return refresh(); });
+  }
+  if(id){
+    state.movies = state.movies.map(function(m){ return m.id===id ? Object.assign({},m,data,{id:id}) : m; });
+  } else {
+    var nm = Object.assign({}, data, { id:"l"+Date.now(), created_at:new Date().toISOString() });
+    state.movies = [nm].concat(state.movies);
+  }
+  lsSaveMovies(); return refresh();
+}
+function deleteMovie(id){
+  if(state.mode==="api") return apiCall("DELETE","?p=movies&id="+id).then(function(){ return refresh(); });
+  state.movies = state.movies.filter(function(m){ return m.id!==id; });
+  lsSaveMovies(); return refresh();
+}
+function doLogin(login, pass){
+  if(state.mode==="api"){
+    return apiCall("POST","?p=auth",{login:login,pass:pass}).then(function(r){
+      localStorage.setItem(LS_TOKEN, r.token); state.authed=true; return ensureAdmins();
+    });
+  }
+  if(login==="admin" && pass==="kinometr"){ state.authed=true; return ensureAdmins(); }
+  return Promise.reject(new Error("Неверный логин или пароль (демо: admin / kinometr)"));
+}
+function doLogout(){ localStorage.removeItem(LS_TOKEN); state.authed=false; state.admins=[]; render(); afterRender(); }
+function addAdmin(login, pass, role){
+  if(state.mode==="api") return apiCall("POST","?p=admins",{login:login,pass:pass,role:role}).then(function(){ return ensureAdmins(); });
+  return Promise.reject(new Error("Управление админами доступно только с подключённой базой (api.php)"));
+}
+function deleteAdmin(id){
+  if(state.mode==="api") return apiCall("DELETE","?p=admins&id="+id).then(function(){ return ensureAdmins(); });
+  return Promise.reject(new Error("Демо-режим: удаление недоступно"));
+}
+function importMovies(rows){
+  if(state.mode==="api") return apiCall("POST","?p=movies/import",{movies:rows}).then(function(r){ return refresh().then(function(){ return r; }); });
+  var now=Date.now();
+  rows.forEach(function(m,i){ state.movies.unshift(Object.assign({},m,{id:"i"+now+i,created_at:new Date(now-i).toISOString()})); });
+  lsSaveMovies(); return refresh().then(function(){ return {added:rows.length}; });
+}
+
+/* ------------------------------ UI-кит ------------------------------- */
+function toast(msg, kind){
+  var t=document.createElement("div"); t.className="toast "+(kind||"");
+  t.textContent=msg; document.getElementById("toasts").appendChild(t);
+  setTimeout(function(){ t.classList.add("out"); setTimeout(function(){ t.remove(); },320); },3400);
+}
+function openModal(html){
+  var root=document.getElementById("modal-root");
+  root.innerHTML='<div class="overlay" data-action="overlay-close"><div class="modal" data-stop="1">'+
+    '<button class="modal-x" data-action="close-modal" title="Закрыть"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>'+
+    html+'</div></div>';
+}
+function closeModal(){ document.getElementById("modal-root").innerHTML=""; }
+function confirmDlg(title, text, okLabel, onOk){
+  openModal('<div style="padding:32px"><div class="d3" style="margin-bottom:10px">'+esc(title)+'</div>'+
+    '<p class="sub" style="font-size:14.5px;margin-bottom:24px">'+esc(text)+'</p>'+
+    '<div style="display:flex;gap:12px;justify-content:flex-end"><button class="btn btn-ghost" data-action="close-modal">Отмена</button>'+
+    '<button class="btn btn-danger" id="cf-ok">'+esc(okLabel)+'</button></div></div>');
+  document.getElementById("cf-ok").onclick=function(){ closeModal(); onOk(); };
+}
+
+/* ============================== ЛЕНДИНГ =============================== */
+function sortedMovies(){
+  var list = state.movies.slice();
+  var q = state.search.trim().toLowerCase();
+  if(q) list = list.filter(function(m){
+    return (m.title+" "+(m.original_title||"")+" "+(m.director||"")).toLowerCase().indexOf(q)>=0;
+  });
+  if(state.genre!=="all") list = list.filter(function(m){ return (m.genres||[]).indexOf(state.genre)>=0; });
+  var s=state.sort;
+  list.sort(function(a,b){
+    if(s==="admin") return (b.admin_score||0)-(a.admin_score||0);
+    if(s==="imdb")  return (b.imdb_score||0)-(a.imdb_score||0);
+    if(s==="year")  return (b.year||0)-(a.year||0);
+    return (b.created_at||"").localeCompare(a.created_at||"");
+  });
+  return list;
+}
+function allGenres(){
+  var set={}; state.movies.forEach(function(m){ (m.genres||[]).forEach(function(g){ set[g]=1; }); });
+  return Object.keys(set).sort(function(a,b){ return a.localeCompare(b,"ru"); });
+}
+function movieById(id){ for(var i=0;i<state.movies.length;i++) if(String(state.movies[i].id)===String(id)) return state.movies[i]; return null; }
+
+function headerHTML(){
+  var isAdmin = location.hash==="#/admin";
+  return '<header class="hdr"><div class="wrap hdr-in">'+
+    '<button class="logo" data-action="go-home" title="КИНОМЕТР">'+
+      '<svg width="30" height="30" viewBox="0 0 30 30" fill="none"><circle cx="15" cy="15" r="13.5" stroke="#e8b84b" stroke-width="2.2"/><path d="M15 7v16M15 7l-5.5 5.5M15 7l5.5 5.5" stroke="#e8b84b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      'КИНО<b>МЕТР</b></button>'+
+    '<nav class="hdr-nav">'+
+      '<button class="nav-link'+(isAdmin?"":" on")+'" data-action="go-home">Каталог</button>'+
+      '<button class="nav-link'+(isAdmin?" on":"")+'" data-action="go-admin"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="vertical-align:-2px;margin-right:5px"><path d="M8 1.5l5.5 2v4c0 3.6-2.3 6-5.5 7-3.2-1-5.5-3.4-5.5-7v-4l5.5-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Админка</button>'+
+      '<span class="mode" title="Источник данных"><i class="dot '+(state.mode==="api"?"ok":"demo")+'"></i>'+(state.mode==="api"?"MySQL":"демо")+'</span>'+
+    '</nav></div></header>';
+}
+function tickerHTML(){
+  var recent = state.movies.slice().sort(function(a,b){ return (b.created_at||"").localeCompare(a.created_at||""); }).slice(0,10);
+  if(!recent.length) return "";
+  var s = recent.map(function(m){ return '<span>'+esc(m.title)+' <b>'+fmt1(m.admin_score||0)+'</b></span>'; }).join("");
+  return '<div class="ticker"><div class="ticker-track">'+s+s+'</div></div>';
+}
+function gaugeSVG(){
+  return '<svg viewBox="0 0 200 120" width="100%">'+
+  '<defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e2554d"/><stop offset=".5" stop-color="#e8b84b"/><stop offset="1" stop-color="#4fc98a"/></linearGradient></defs>'+
+  '<path d="M16 106 A 84 84 0 0 1 184 106" fill="none" stroke="#26262e" stroke-width="13" stroke-linecap="round"/>'+
+  '<path d="M16 106 A 84 84 0 0 1 184 106" fill="none" stroke="url(#gg)" stroke-width="13" stroke-linecap="round" opacity=".9"/>'+
+  '<g id="needle" style="transform-origin:100px 106px;transform:rotate(-90deg);transition:transform 1.3s cubic-bezier(.2,1.1,.3,1)"><line x1="100" y1="106" x2="100" y2="34" stroke="#f2efe6" stroke-width="3.4" stroke-linecap="round"/></g>'+
+  '<circle cx="100" cy="106" r="8" fill="#e8b84b" stroke="#0d0d0f" stroke-width="3"/></svg>';
+}
+function latestHTML(){
+  var latest = state.movies.slice().sort(function(a,b){ return (b.created_at||"").localeCompare(a.created_at||""); })[0];
+  if(!latest) return "";
+  var v = latest.admin_score||0;
+  return '<section class="wrap"><div class="latest">'+
+    '<div class="rv"><div class="poster-frame">'+coverImg(latest.cover_url)+
+      '<span class="poster-badge">Новое измерение</span></div></div>'+
+    '<div class="rv"><span class="label">Свежее измерение</span>'+
+      '<h1 class="d1" style="margin:14px 0 4px">'+esc(latest.title)+'</h1>'+
+      (latest.original_title?'<div class="mono sub" style="font-size:13px;letter-spacing:.6px">'+esc(latest.original_title)+' · '+(latest.year||"—")+'</div>':"")+
+      '<div class="gauge-wrap"><div class="gauge">'+gaugeSVG()+
+        '<div class="gauge-num"><span data-count="'+v+'">0,0</span><small>ОЦЕНКА АДМИНА</small></div></div>'+
+      '<div><span class="score-chip" style="color:#f5c518;border-color:rgba(245,197,24,.4)"><span class="mono">IMDb</span> '+fmt1(latest.imdb_score||0)+'<small>/10</small></span>'+
+      '<div class="meta-row" style="margin-top:16px"><span><b>'+(latest.year||"—")+'</b> год</span><span>'+esc(latest.director||"—")+'</span><span>'+fmtDur(latest.duration)+'</span></div></div></div>'+
+      '<div class="genres" style="margin-bottom:18px">'+(latest.genres||[]).map(gpill).join("")+'</div>'+
+      '<p class="sub" style="max-width:560px;font-size:15.5px">'+esc(latest.description||"")+'</p>'+
+      '<div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">'+
+        '<button class="btn btn-gold" data-action="open-movie" data-id="'+esc(latest.id)+'">Карточка фильма <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+        '<button class="btn btn-ghost" data-action="scroll-catalog">Весь каталог</button>'+
+      '</div></div></div>'+
+    statsHTML()+'</section>';
+}
+function statsHTML(){
+  var ms=state.movies; if(!ms.length) return "";
+  var avgA=ms.reduce(function(s,m){return s+(+m.admin_score||0);},0)/ms.length;
+  var avgI=ms.reduce(function(s,m){return s+(+m.imdb_score||0);},0)/ms.length;
+  var items=[
+    {v:ms.length,k:"фильмов в каталоге"},
+    {v:allGenres().length,k:plural(allGenres().length,"жанр","жанра","жанров")},
+    {v:fmt1(avgA),k:"средний балл админа"},
+    {v:fmt1(avgI),k:"средний рейтинг IMDb"}
+  ];
+  return '<div class="stats">'+items.map(function(it,i){ return '<div class="stat rv" style="transition-delay:'+(i*70)+'ms"><div class="v">'+it.v+'</div><div class="k">'+it.k+'</div></div>'; }).join("")+'</div>';
+}
+function cardHTML(m,i){
+  var col=scoreColor(m.admin_score||0);
+  return '<article class="card rv" style="transition-delay:'+((i%6)*60)+'ms" data-action="open-movie" data-id="'+esc(m.id)+'">'+
+    '<div class="card-cover">'+coverImg(m.cover_url)+
+      '<span class="card-score" style="color:'+col+';border-color:'+col+'55">'+fmt1(m.admin_score||0)+'</span>'+
+      (m.imdb_score?'<span class="card-imdb">IMDb '+fmt1(m.imdb_score)+'</span>':"")+
+    '</div><div class="card-body"><div class="card-title">'+esc(m.title)+'</div>'+
+    '<div class="card-meta">'+(m.year||"—")+' · '+esc(m.director||"—")+'</div>'+
+    '<div class="card-genres">'+(m.genres||[]).slice(0,2).map(function(g){return "<i>"+esc(g)+"</i>";}).join("")+'</div></div></article>';
+}
+function catalogHTML(){
+  var genres=allGenres();
+  var list=sortedMovies();
+  var chips='<button class="chip'+(state.genre==="all"?" on":"")+'" data-action="genre" data-g="all">Все <span class="n">'+state.movies.length+'</span></button>'+
+    genres.map(function(g){
+      var n=state.movies.filter(function(m){return (m.genres||[]).indexOf(g)>=0;}).length;
+      return '<button class="chip'+(state.genre===g?" on":"")+'" data-action="genre" data-g="'+esc(g)+'">'+esc(g)+' <span class="n">'+n+'</span></button>';
+    }).join("");
+  var cards = list.length
+    ? '<div class="grid" id="card-grid">'+list.map(cardHTML).join("")+'</div>'
+    : '<div class="empty"><div class="d3">Ничего не нашлось</div><p>Попробуйте изменить запрос или сбросить фильтры.</p></div>';
+  return '<section class="wrap sec" id="catalog"><div class="sec-head"><div><span class="label">Последние добавленные</span><h2 class="d2" style="margin-top:10px">Каталог измерений</h2></div>'+
+    '<div class="mono sub" style="font-size:12px;letter-spacing:1.5px">ПОКАЗАНО '+list.length+' / '+state.movies.length+'</div></div>'+
+    '<div class="toolbar"><div class="search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.7"/><path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'+
+    '<input class="inp" id="q" type="search" placeholder="Название, режиссёр…" value="'+esc(state.search)+'"></div>'+
+    '<select class="inp sortsel" id="sort"><option value="new"'+(state.sort==="new"?" selected":"")+'>Сначала новые</option>'+
+    '<option value="admin"'+(state.sort==="admin"?" selected":"")+'>По оценке админа</option>'+
+    '<option value="imdb"'+(state.sort==="imdb"?" selected":"")+'>По рейтингу IMDb</option>'+
+    '<option value="year"'+(state.sort==="year"?" selected":"")+'>По году</option></select></div>'+
+    '<div class="genres" style="margin-bottom:26px">'+chips+'</div>'+cards+'</section>';
+}
+function movieModalHTML(m){
+  var colA=scoreColor(m.admin_score||0);
+  return '<div class="mv"><div class="mv-cover">'+coverImg(m.cover_url)+'</div><div class="mv-body">'+
+    '<div class="genres" style="margin-bottom:14px">'+(m.genres||[]).map(gpill).join("")+'</div>'+
+    '<h3 class="d2">'+esc(m.title)+'</h3>'+
+    (m.original_title?'<div class="mono sub" style="font-size:12.5px;margin-top:5px;letter-spacing:.5px">'+esc(m.original_title)+'</div>':"")+
+    '<div class="meta-row"><span><b>'+(m.year||"—")+'</b> год</span><span>реж. <b>'+esc(m.director||"—")+'</b></span><span>'+fmtDur(m.duration)+'</span>'+(m.country?'<span>'+esc(m.country)+'</span>':"")+'</div>'+
+    '<div class="mv-scores">'+
+      '<div class="mv-score"><div class="v" style="color:'+colA+'">'+fmt1(m.admin_score||0)+'</div><div class="k">Оценка админа</div><div class="bar"><i style="width:'+((m.admin_score||0)*10)+'%;background:'+colA+'"></i></div></div>'+
+      '<div class="mv-score"><div class="v" style="color:#f5c518">'+fmt1(m.imdb_score||0)+'</div><div class="k">Рейтинг IMDb</div><div class="bar"><i style="width:'+((m.imdb_score||0)*10)+'%;background:#f5c518"></i></div></div>'+
+    '</div>'+
+    '<div class="verdict"><b>Вердикт:</b> '+verdictFor(m.admin_score||0)+'</div>'+
+    '<p class="sub" style="font-size:15px">'+esc(m.description||"Описания пока нет.")+'</p>'+
+    '<div class="mono" style="font-size:10.5px;color:var(--faint);letter-spacing:1.5px;margin-top:22px;text-transform:uppercase">Добавлено '+esc((m.created_at||"").slice(0,10))+'</div>'+
+  '</div></div>';
+}
+
+/* =============================== АДМИНКА ============================== */
+function loginHTML(){
+  return '<section class="login-wrap"><div class="login-card rv in"><span class="label">Панель управления</span>'+
+    '<h2 class="d2" style="margin:12px 0 8px">Вход для админов</h2>'+
+    '<p class="sub" style="font-size:14px;margin-bottom:24px">'+(state.mode==="api"?"Используйте логин и пароль администратора.":"Демо-режим: <b style=\"color:var(--gold)\">admin / kinometr</b>. Подключите api.php, чтобы войти в базу.")+'</p>'+
+    '<form id="login-form"><div class="field"><label>Логин</label><input class="inp" name="login" autocomplete="username" required placeholder="admin"></div>'+
+    '<div class="field"><label>Пароль</label><input class="inp" name="pass" type="password" autocomplete="current-password" required placeholder="••••••••"></div>'+
+    '<button class="btn btn-gold" style="width:100%;margin-top:8px" id="login-btn">Войти</button></form>'+
+    '<p class="hint">Пароли хранятся в MySQL в виде bcrypt-хешей и не передаются в открытом виде при сессиях.</p>'+
+  '</div></section>';
+}
+function movieFormHTML(m){
+  m = m || {title:"",original_title:"",year:new Date().getFullYear(),country:"",director:"",duration:"",genres:[],description:"",cover_url:"",admin_score:"",imdb_score:""};
+  var editing = !!state.editingId;
+  return '<div class="form-grid"><form id="movie-form" data-id="'+(editing?esc(state.editingId):"")+'"><div class="grid2">'+
+    '<div class="field"><label>Название (рус) *</label><input class="inp" name="title" required value="'+esc(m.title)+'"></div>'+
+    '<div class="field"><label>Оригинальное название</label><input class="inp" name="original_title" value="'+esc(m.original_title||"")+'"></div>'+
+    '<div class="field"><label>Год</label><input class="inp" name="year" type="number" min="1900" max="2100" value="'+esc(m.year||"")+'"></div>'+
+    '<div class="field"><label>Страна</label><input class="inp" name="country" value="'+esc(m.country||"")+'"></div>'+
+    '<div class="field"><label>Режиссёр</label><input class="inp" name="director" value="'+esc(m.director||"")+'"></div>'+
+    '<div class="field"><label>Хронометраж, мин</label><input class="inp" name="duration" type="number" min="0" value="'+esc(m.duration||"")+'"></div>'+
+    '<div class="field"><label>Оценка админа (0–10)</label><input class="inp" name="admin_score" type="number" step="0.1" min="0" max="10" required value="'+esc(m.admin_score===""?"":m.admin_score)+'"></div>'+
+    '<div class="field"><label>Рейтинг IMDb (0–10)</label><input class="inp" name="imdb_score" type="number" step="0.1" min="0" max="10" value="'+esc(m.imdb_score===""?"":m.imdb_score)+'"></div></div>'+
+    '<div class="field"><label>Жанры через запятую</label><input class="inp" name="genres" value="'+esc((m.genres||[]).join(", "))+'" placeholder="драма, триллер, фантастика"></div>'+
+    '<div class="field"><label>Обложка — ссылка на картинку</label><input class="inp" name="cover_url" value="'+esc(m.cover_url||"")+'" placeholder="https://…/poster.jpg" oninput="previewCover(this.value)"></div>'+
+    '<div class="field"><label>Описание</label><textarea class="inp" name="description" rows="4">'+esc(m.description||"")+'</textarea></div>'+
+    '<div style="display:flex;gap:12px;margin-top:6px">'+
+      '<button class="btn btn-gold" type="submit">'+(editing?"Сохранить изменения":"Добавить в каталог")+'</button>'+
+      (editing?'<button class="btn btn-ghost" type="button" data-action="tab" data-tab="list">Отмена</button>':"")+
+    '</div></form>'+
+    '<div class="preview-card"><div class="label" style="margin-bottom:12px">Предпросмотр карточки</div>'+
+      '<div class="card" style="cursor:default;max-width:300px"><div class="card-cover">'+coverImg(m.cover_url)+'</div>'+
+      '<div class="card-body"><div class="card-title" id="pv-title">'+esc(m.title||"Название фильма")+'</div>'+
+      '<div class="card-meta" id="pv-meta">'+(m.year||"—")+' · '+esc(m.director||"режиссёр")+'</div></div></div>'+
+    '</div></div>';
+}
+function importHTML(){
+  var rows = state.importRows;
+  var preview="";
+  if(rows){
+    var ok = rows.filter(function(r){return r._ok;});
+    var bad = rows.filter(function(r){return !r._ok;});
+    preview = '<div class="panel-box" style="margin-top:22px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">'+
+      '<div class="d3">Из файла «'+esc(state.importName)+'»: <span style="color:var(--green)">'+ok.length+' готово</span>'+(bad.length?' · <span style="color:var(--red)">'+bad.length+' с ошибкой</span>':"")+'</div>'+
+      (ok.length?'<button class="btn btn-gold btn-sm" data-action="do-import">Импортировать '+ok.length+' '+plural(ok.length,"фильм","фильма","фильмов")+'</button>':"")+'</div>'+
+      rows.slice(0,30).map(function(r){
+        return '<div class="imp-item">'+(r._ok?'<span class="st ok">OK</span>':'<span class="st bad">'+esc(r._err||"ошибка")+'</span>')+
+          '<b>'+esc(r.title||"—")+'</b><span class="mono sub" style="font-size:11px">'+(r.year||"")+' · админ '+fmt1(r.admin_score||0)+' · imdb '+fmt1(r.imdb_score||0)+'</span></div>';
+      }).join("") + (rows.length>30?'<p class="hint">Показаны первые 30 строк из '+rows.length+'.</p>':"")+'</div>';
+  }
+  return '<div class="panel-box rv in"><div class="d3" style="margin-bottom:6px">Импорт фильмов из файла</div>'+
+    '<p class="sub" style="font-size:14px;margin-bottom:20px">Перетащите файл <b>JSON</b> или <b>CSV</b> (или кликните, чтобы выбрать). Колонки CSV: '+
+    '<code style="font-family:var(--font-m);font-size:12px;color:var(--gold)">название, год, страна, режиссёр, хронометраж, жанры, описание, обложка, оценка админа, imdb, оригинальное название</code>.</p>'+
+    '<div class="drop" id="drop"><svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5l5 5" stroke="#e8b84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke="#98949f" stroke-width="2" stroke-linecap="round"/></svg>'+
+    '<div class="d3">Перетащите файл сюда</div><p class="sub" style="font-size:13px">.json · .csv</p><input type="file" id="file" accept=".json,.csv,application/json,text/csv" hidden></div>'+
+    '<div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">'+
+      '<button class="btn btn-ghost btn-sm" data-action="tpl-json">Шаблон JSON</button>'+
+      '<button class="btn btn-ghost btn-sm" data-action="tpl-csv">Шаблон CSV</button>'+
+      '<button class="btn btn-ghost btn-sm" data-action="export-json">Экспорт каталога в JSON</button></div>'+
+    '<div class="field" style="margin-top:22px"><label>Или вставьте JSON / CSV текстом</label>'+
+      '<textarea class="inp" id="paste-area" rows="6" placeholder=\'[{"title":"Фильм","year":2024,"admin_score":8,"imdb_score":7.9,"genres":["драма"],"cover_url":"https://…"}]\'></textarea></div>'+
+    '<button class="btn btn-gold" data-action="parse-paste">Разобрать текст</button></div>'+preview;
+}
+function adminsHTML(){
+  var list = state.admins.map(function(a){
+    var isRoot = a.role==="root";
+    return '<div class="arow"><div><div style="font-weight:800">'+esc(a.login)+'</div>'+
+      '<div class="mono" style="font-size:10.5px;color:var(--faint);letter-spacing:1px;margin-top:2px">ДОБАВЛЕН '+esc((a.created_at||"").slice(0,10)||"—")+'</div></div>'+
+      '<span class="role '+(isRoot?"root":"admin")+'">'+(isRoot?"главный":"админ")+'</span>'+
+      (isRoot?'<span class="mono sub" style="font-size:10.5px;letter-spacing:1px">ЗАЩИЩЁН</span>'
+            :'<button class="btn btn-danger btn-sm" data-action="del-admin" data-id="'+esc(a.id)+'">Удалить</button>')+
+    '</div>';
+  }).join("");
+  return '<div class="panel-box rv in"><div class="d3" style="margin-bottom:6px">Администраторы</div>'+
+    '<p class="sub" style="font-size:14px;margin-bottom:20px">Каждый админ входит под своим логином и может управлять каталогом. Главный админ защищён от удаления.</p>'+
+    list+'<div style="border-top:1px solid var(--line);margin-top:22px;padding-top:22px"><div class="label" style="margin-bottom:14px">Добавить администратора</div>'+
+    '<form id="admin-form"><div class="grid2"><div class="field"><label>Логин</label><input class="inp" name="login" required minlength="3" placeholder="ivan"></div>'+
+    '<div class="field"><label>Пароль</label><input class="inp" name="pass" type="password" required minlength="4" placeholder="минимум 4 символа"></div></div>'+
+    '<button class="btn btn-gold" type="submit">Добавить админа</button>'+
+    (state.mode!=="api"?'<p class="hint">Доступно при подключённой базе MySQL (api.php).</p>':"")+'</form></div></div>';
+}
+function moviesListHTML(){
+  var list = state.movies.slice().sort(function(a,b){ return (b.created_at||"").localeCompare(a.created_at||""); });
+  if(!list.length) return '<div class="empty"><div class="d3">Каталог пуст</div><p>Добавьте первый фильм или импортируйте файл.</p></div>';
+  var avg = list.reduce(function(s,m){return s+(+m.admin_score||0);},0)/list.length;
+  return '<div class="stats" style="margin:0 0 22px">'+
+    '<div class="stat"><div class="v">'+list.length+'</div><div class="k">фильмов</div></div>'+
+    '<div class="stat"><div class="v">'+fmt1(avg)+'</div><div class="k">средний балл</div></div>'+
+    '<div class="stat"><div class="v">'+allGenres().length+'</div><div class="k">жанров</div></div>'+
+    '<div class="stat"><div class="v">'+(state.admins.length||"1")+'</div><div class="k">админов</div></div></div>'+
+    list.map(function(m){
+      var col=scoreColor(m.admin_score||0);
+      return '<div class="mrow">'+coverImg(m.cover_url)+
+        '<div><div class="t">'+esc(m.title)+'</div><div class="m">'+(m.year||"—")+' · '+esc(m.director||"—")+' · добавлен '+esc((m.created_at||"").slice(0,10)||"—")+'</div></div>'+
+        '<span class="score-chip" style="color:'+col+';border-color:'+col+'55;font-size:13px">'+fmt1(m.admin_score||0)+'<small>админ</small></span>'+
+        '<span class="score-chip" style="color:#f5c518;border-color:rgba(245,197,24,.4);font-size:13px">'+fmt1(m.imdb_score||0)+'<small>IMDb</small></span>'+
+        '<button class="btn btn-ghost btn-sm" data-action="edit-movie" data-id="'+esc(m.id)+'">Изменить</button>'+
+        '<button class="btn btn-danger btn-sm" data-action="del-movie" data-id="'+esc(m.id)+'" title="Удалить"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4M6.5 7v4M9.5 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>'+
+      '</div>';
+    }).join("");
+}
+function adminHTML(){
+  if(!state.authed) return headerHTML()+loginHTML()+footerHTML();
+  var t=state.adminTab;
+  var tabs=[["list","Фильмы"],["add","Добавить"],["import","Импорт"],["admins","Админы"]];
+  var body;
+  if(t==="list") body=moviesListHTML();
+  else if(t==="add") body='<div class="panel-box rv in"><div class="d3" style="margin-bottom:18px">'+(state.editingId?"Редактирование фильма":"Новая карточка фильма")+'</div>'+movieFormHTML(state.editingId?movieById(state.editingId):null)+'</div>';
+  else if(t==="import") body=importHTML();
+  else body=adminsHTML();
+  return headerHTML()+'<main class="wrap"><div class="sec-head" style="margin-top:44px"><div><span class="label">Панель управления</span>'+
+    '<h1 class="d2" style="margin-top:10px">Админка КИНОМЕТРа</h1></div>'+
+    '<div style="display:flex;gap:10px"><span class="mode"><i class="dot '+(state.mode==="api"?"ok":"demo")+'"></i>'+(state.mode==="api"?"MySQL":"демо-режим")+'</span>'+
+    '<button class="btn btn-ghost btn-sm" data-action="logout">Выйти</button></div></div>'+
+    '<div class="tabs">'+tabs.map(function(x){ return '<button class="tab'+(t===x[0]?" on":"")+'" data-action="tab" data-tab="'+x[0]+'">'+x[1]+'</button>'; }).join("")+'</div>'+
+    body+'</main>'+footerHTML();
+}
+function footerHTML(){
+  return '<footer class="ftr"><div class="wrap ftr-in"><div class="mono">КИНОМЕТР © '+new Date().getFullYear()+' — оцениваем честно</div>'+
+    '<div>данные: '+(state.mode==="api"?"MySQL · AwardSpace":"локальный демо-режим")+'</div></div></footer>';
+}
+
+/* =============================== РЕНДЕР =============================== */
+function render(){
+  var app=document.getElementById("app");
+  if(state.route==="admin"){ app.innerHTML=adminHTML(); return; }
+  if(state.loading){ app.innerHTML=headerHTML()+'<div class="loading"><span class="spin"></span>загружаем каталог…</div>'+footerHTML(); return; }
+  app.innerHTML=headerHTML()+tickerHTML()+'<main>'+(state.movies.length?latestHTML():"")+catalogHTML()+'</main>'+footerHTML();
+}
+
+/* -------- оживление после рендера: анимации, слушатели -------- */
+var observer=null;
+function afterRender(){
+  if(observer) observer.disconnect();
+  observer=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); observer.unobserve(e.target); } }); },{threshold:.08});
+  document.querySelectorAll(".rv:not(.in)").forEach(function(el){ observer.observe(el); });
+  /* стрелка спидометра */
+  var nd=document.getElementById("needle");
+  if(nd){ var latest=state.movies.slice().sort(function(a,b){return (b.created_at||"").localeCompare(a.created_at||"");})[0];
+    var v=latest?(latest.admin_score||0):0;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ nd.style.transform="rotate("+(-90+v*18)+"deg)"; }); });
+    document.querySelectorAll("[data-count]").forEach(function(el){ countUp(el, parseFloat(el.getAttribute("data-count"))||0); });
+  }
+  /* каталог: поиск и сортировка без полной перерисовки */
+  var q=document.getElementById("q");
+  if(q){ q.addEventListener("input", debounce(function(){ state.search=q.value; updateCatalog(); },220)); }
+  var so=document.getElementById("sort");
+  if(so){ so.addEventListener("change", function(){ state.sort=so.value; updateCatalog(); }); }
+  bindAdminPage();
+}
+function updateCatalog(){
+  var sec=document.getElementById("catalog"); if(!sec) return;
+  var list=sortedMovies();
+  var g=sec.querySelector("#card-grid");
+  var headCount=sec.querySelector(".sec-head .mono");
+  if(headCount) headCount.textContent="ПОКАЗАНО "+list.length+" / "+state.movies.length;
+  if(g){ g.outerHTML='<div class="grid" id="card-grid">'+list.map(cardHTML).join("")+'</div>'; }
+  else{ var empty=sec.querySelector(".empty"); if(empty) empty.outerHTML='<div class="grid" id="card-grid">'+list.map(cardHTML).join("")+'</div>'; }
+  var ng=sec.querySelector("#card-grid");
+  if(ng){ ng.querySelectorAll(".rv").forEach(function(el){ el.classList.add("in"); }); }
+  sec.querySelectorAll(".chip").forEach(function(ch){
+    var gg=ch.getAttribute("data-g");
+    ch.classList.toggle("on", gg===state.genre);
+  });
+  afterRender();
+}
+function countUp(el,target){
+  var t0=null, dur=1100;
+  function step(t){ if(!t0) t0=t; var p=Math.min(1,(t-t0)/dur); p=1-Math.pow(1-p,3);
+    el.textContent=fmt1(target*p); if(p<1) requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+function previewCover(url){
+  var sec=document.querySelector(".preview-card .card-cover");
+  if(sec) sec.innerHTML=coverImg(url);
+  var ti=document.getElementById("pv-title"); if(ti){ var f=document.querySelector('#movie-form [name="title"]'); ti.textContent=(f&&f.value)||"Название фильма"; }
+  var me=document.getElementById("pv-meta"); if(me){ var f2=document.querySelector('#movie-form');
+    me.textContent=((f2.year.value)||"—")+" · "+((f2.director.value)||"режиссёр"); }
+}
+
+/* -------- слушатели админки (после её рендера) -------- */
+function bindAdminPage(){
+  if(state.route!=="admin") return;
+  var lf=document.getElementById("login-form");
+  if(lf && !lf._b){ lf._b=1; lf.addEventListener("submit",function(e){
+    e.preventDefault(); var btn=document.getElementById("login-btn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>&nbsp;Проверяем…';
+    doLogin(lf.login.value.trim(), lf.pass.value).then(function(){ toast("С возвращением!","ok"); render(); afterRender(); })
+      .catch(function(err){ toast(err.message||"Ошибка входа","err"); btn.disabled=false; btn.textContent="Войти"; });
+  }); }
+  var mf=document.getElementById("movie-form");
+  if(mf && !mf._b){ mf._b=1; mf.addEventListener("submit",function(e){
+    e.preventDefault(); var id=mf.getAttribute("data-id")||null;
+    var data={
+      title:mf.title.value.trim(), original_title:mf.original_title.value.trim(),
+      year:parseInt(mf.year.value)||null, country:mf.country.value.trim(),
+      director:mf.director.value.trim(), duration:parseInt(mf.duration.value)||0,
+      admin_score:clampScore(mf.admin_score.value), imdb_score:clampScore(mf.imdb_score.value),
+      genres:parseGenres(mf.genres.value), description:mf.description.value.trim(),
+      cover_url:mf.cover_url.value.trim()
+    };
+    if(!data.title){ toast("Укажите название фильма","err"); return; }
+    saveMovie(data,id).then(function(){ state.editingId=null; state.adminTab="list"; toast(id?"Карточка обновлена":"Фильм добавлен в каталог","ok"); render(); afterRender(); })
+      .catch(function(err){ toast("Ошибка: "+err.message,"err"); });
+  }); }
+  var af=document.getElementById("admin-form");
+  if(af && !af._b){ af._b=1; af.addEventListener("submit",function(e){
+    e.preventDefault();
+    addAdmin(af.login.value.trim(), af.pass.value, "admin").then(function(){ toast("Администратор добавлен","ok"); af.reset(); })
+      .catch(function(err){ toast(err.message,"err"); });
+  }); }
+  var dz=document.getElementById("drop"), fi=document.getElementById("file");
+  if(dz && !dz._b){ dz._b=1;
+    dz.addEventListener("click",function(){ fi.click(); });
+    dz.addEventListener("dragover",function(e){ e.preventDefault(); dz.classList.add("over"); });
+    dz.addEventListener("dragleave",function(){ dz.classList.remove("over"); });
+    dz.addEventListener("drop",function(e){ e.preventDefault(); dz.classList.remove("over"); if(e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+    fi.addEventListener("change",function(){ if(fi.files[0]) readFile(fi.files[0]); });
+  }
+}
+
+/* =============================== ИМПОРТ =============================== */
+function normKey(k){
+  k=String(k).trim().toLowerCase();
+  var map={
+    "название":"title","title":"title","имя":"title","название фильма":"title",
+    "оригинальное название":"original_title","original_title":"original_title","оригинал":"original_title",
+    "год":"year","year":"year",
+    "страна":"country","country":"country",
+    "режиссёр":"director","режиссер":"director","director":"director",
+    "хронометраж":"duration","длительность":"duration","duration":"duration","минуты":"duration",
+    "жанры":"genres","genres":"genres","жанр":"genres","genre":"genres",
+    "описание":"description","description":"description","синопсис":"description",
+    "обложка":"cover_url","cover_url":"cover_url","cover":"cover_url","постер":"cover_url","изображение":"cover_url","картинка":"cover_url","url":"cover_url","poster":"cover_url",
+    "оценка админа":"admin_score","admin_score":"admin_score","оценка":"admin_score","admin":"admin_score","оценка_админа":"admin_score",
+    "imdb":"imdb_score","imdb_score":"imdb_score","рейтинг imdb":"imdb_score","imdb score":"imdb_score","рейтинг":"imdb_score"
+  };
+  return map[k]||k;
+}
+function normRow(raw){
+  var o={},k; for(k in raw) o[normKey(k)]=raw[k];
+  var title=String(o.title||"").trim();
+  if(!title) return {_ok:false,_err:"нет названия",title:"(без названия)"};
+  var out={
+    title:title,
+    original_title:String(o.original_title||"").trim(),
+    year:parseInt(o.year)||null,
+    country:String(o.country||"").trim(),
+    director:String(o.director||"").trim(),
+    duration:parseInt(o.duration)||0,
+    genres:parseGenres(o.genres),
+    description:String(o.description||"").trim(),
+    cover_url:String(o.cover_url||"").trim(),
+    admin_score:clampScore(o.admin_score),
+    imdb_score:clampScore(o.imdb_score)
+  };
+  out._ok=true; return out;
+}
+function parseCSV(text){
+  var delim = (text.split("\n")[0].match(/;/g)||[]).length > (text.split("\n")[0].match(/,/g)||[]).length ? ";" : ",";
+  var rows=[], row=[], cur="", inQ=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else inQ=false; } else cur+=c; }
+    else if(c==='"') inQ=true;
+    else if(c===delim){ row.push(cur); cur=""; }
+    else if(c==="\n"||c==="\r"){ if(c==="\r"&&text[i+1]==="\n") i++; row.push(cur); cur=""; if(row.some(function(x){return x.trim()!=="";})) rows.push(row); row=[]; }
+    else cur+=c;
+  }
+  row.push(cur); if(row.some(function(x){return x.trim()!=="";})) rows.push(row);
+  if(rows.length<2) throw new Error("В CSV нет строк с данными");
+  var head=rows[0].map(function(h){ return normKey(h); });
+  return rows.slice(1).map(function(r){
+    var o={}; head.forEach(function(h,idx){ o[h]=(r[idx]||"").trim(); });
+    return normRow(o);
+  });
+}
+function parseImport(text, name){
+  text=text.trim(); if(!text) throw new Error("Пустой файл");
+  var rows;
+  if(text[0]==="["||text[0]==="{"){
+    var data=JSON.parse(text);
+    if(!Array.isArray(data)) data=data.movies||[data];
+    rows=data.map(normRow);
+  } else rows=parseCSV(text);
+  state.importRows=rows; state.importName=name||"вставленный текст";
+  render(); afterRender();
+  var ok=rows.filter(function(r){return r._ok;}).length;
+  toast("Разобрано: "+ok+" готово к импорту, "+(rows.length-ok)+" с ошибками", ok?"ok":"err");
+}
+function readFile(f){
+  var r=new FileReader();
+  r.onload=function(){ try{ parseImport(String(r.result), f.name); }catch(e){ toast("Не удалось разобрать файл: "+e.message,"err"); } };
+  r.readAsText(f,"utf-8");
+}
+function download(name, text, type){
+  var b=new Blob([text],{type:type||"application/octet-stream"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); URL.revokeObjectURL(a.href); },300);
+}
+var TPL_JSON='[\n  {\n    "title": "Название на русском",\n    "original_title": "Original Title",\n    "year": 2024,\n    "country": "США",\n    "director": "Режиссёр",\n    "duration": 120,\n    "genres": ["драма", "триллер"],\n    "description": "Краткое описание…",\n    "cover_url": "https://example.com/poster.jpg",\n    "admin_score": 8.5,\n    "imdb_score": 7.9\n  }\n]';
+var TPL_CSV='название;оригинальное название;год;страна;режиссёр;хронометраж;жанры;описание;обложка;оценка админа;imdb\nДюна: Часть вторая;Dune: Part Two;2024;США;Дени Вильнёв;166;"фантастика, приключения";Описание фильма;https://example.com/poster.jpg;8.4;8.5';
+
+/* ============================ СОБЫТИЯ (делегирование) ================== */
+document.addEventListener("click", function(e){
+  var spot=document.getElementById("spot");
+  if(spot){ spot.style.left=e.clientX+"px"; spot.style.top=e.clientY+"px"; }
+  var el=e.target.closest("[data-action]"); if(!el) return;
+  if(e.target.closest("[data-stop]") && !el.closest(".modal-x") && el.getAttribute("data-action")!=="close-modal") return;
+  var act=el.getAttribute("data-action"), id=el.getAttribute("data-id");
+  switch(act){
+    case "go-home": location.hash=""; break;
+    case "go-admin": location.hash="#/admin"; break;
+    case "scroll-catalog": var c=document.getElementById("catalog"); if(c) c.scrollIntoView({behavior:"smooth"}); break;
+    case "open-movie": { var m=movieById(id); if(m) openModal(movieModalHTML(m)); break; }
+    case "close-modal": closeModal(); break;
+    case "overlay-close": closeModal(); break;
+    case "genre": state.genre=el.getAttribute("data-g"); updateCatalog(); break;
+    case "tab": state.adminTab=el.getAttribute("data-tab"); if(state.adminTab!=="add") state.editingId=null; if(state.adminTab==="admins") ensureAdmins(); else { render(); afterRender(); } break;
+    case "logout": doLogout(); toast("Вы вышли из панели"); break;
+    case "edit-movie": state.editingId=id; state.adminTab="add"; render(); afterRender(); window.scrollTo({top:0,behavior:"smooth"}); break;
+    case "del-movie": { var mv=movieById(id);
+      confirmDlg("Удалить фильм?","«"+(mv?mv.title:id)+"» будет удалён из каталога безвозвратно.","Удалить",function(){
+        deleteMovie(id).then(function(){ toast("Фильм удалён","ok"); }).catch(function(err){ toast(err.message,"err"); });
+      }); break; }
+    case "del-admin": confirmDlg("Удалить администратора?","Пользователь потеряет доступ к панели.","Удалить",function(){
+        deleteAdmin(id).then(function(){ toast("Администратор удалён","ok"); }).catch(function(err){ toast(err.message,"err"); });
+      }); break;
+    case "parse-paste": { var ta=document.getElementById("paste-area");
+      try{ parseImport(ta.value,"вставленный текст"); }catch(err){ toast("Не удалось разобрать: "+err.message,"err"); } break; }
+    case "do-import": { var ok=(state.importRows||[]).filter(function(r){return r._ok;}).map(function(r){ var c={}; for(var k in r) if(k[0]!=="_") c[k]=r[k]; return c; });
+      if(!ok.length) break;
+      importMovies(ok).then(function(r){ state.importRows=null; toast("Импортировано фильмов: "+(r&&r.added!=null?r.added:ok.length),"ok"); })
+        .catch(function(err){ toast("Ошибка импорта: "+err.message,"err"); }); break; }
+    case "tpl-json": download("kinometr-template.json", TPL_JSON, "application/json"); break;
+    case "tpl-csv": download("kinometr-template.csv", "\uFEFF"+TPL_CSV, "text/csv"); break;
+    case "export-json": download("kinometr-export-"+today()+".json", JSON.stringify(state.movies,null,2), "application/json"); toast("Каталог выгружен в JSON","ok"); break;
+  }
+});
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape") closeModal();
+});
+
+/* ================================ РОУТЕР =============================== */
+function router(){
+  var r=location.hash==="#/admin"?"admin":"home";
+  if(r!==state.route){ state.route=r; render(); afterRender(); }
+  else afterRender();
+  window.scrollTo({top:0});
+  if(r==="admin" && state.authed && state.mode==="api" && !state.admins.length) ensureAdmins();
+}
+window.addEventListener("hashchange", router);
+
+/* ================================ СТАРТ ================================ */
+refresh().then(function(){
+  state.route = location.hash==="#/admin" ? "admin" : "home";
+  render(); afterRender();
+  if(state.route==="admin" && state.authed) ensureAdmins();
+});
+</script>
+</body>
 </html>
