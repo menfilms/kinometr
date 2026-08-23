@@ -4,10 +4,10 @@
 
    ДЕПЛОЙ НА AWARDSPACE:
    1) Загрузите этот файл в папку htdocs вашего сайта (просто index.php)
-   2) Впишите пароль БД в константу DB_PASS ниже
-   3) Готово. Таблицы MySQL и главный админ создадутся автоматически
-      при первом открытии. Вход в админку: ссылка «Админ» в шапке
-      (или #/admin), логин admin, пароль kinometr — сразу смените!
+   2) Пароль БД уже вписан (DB_PASS ниже). Таблицы MySQL и главный
+      админ создадутся автоматически при первом открытии.
+   3) Вход в админку: ссылка «Админ» в шапке (или #/admin),
+      логин admin, пароль kinometr — сразу смените в разделе «Админы»!
 
    Если пароль БД не вписан — сайт сам работает в демо-режиме
    (данные хранятся в браузере), никаких ошибок не будет.
@@ -27,7 +27,7 @@ const DB_HOST = 'fdb1029.awardspace.net';
 const DB_PORT = 3306;
 const DB_NAME = '4772808_base';
 const DB_USER = '4772808_base';
-const DB_PASS = '';            /* <<< ВПИШИТЕ ПАРОЛЬ ОТ БАЗЫ СЮДА */
+const DB_PASS = '66677712A';   /* пароль БД AwardSpace */
 const SECRET  = 'kinometr_4772808_awardspace_secret_2024';
 
 /* ─────────────── служебное ─────────────── */
@@ -408,6 +408,35 @@ button{font-family:inherit}
 .imdb{font:700 11.5px var(--mono);background:var(--imdb);color:#171310;padding:3px 9px;border-radius:6px}
 .more{font:700 12px var(--body);color:var(--mut);transition:.2s}
 .card:hover .more{color:var(--gold)}
+/* золотой блик, пробегающий по карточке при наведении */
+.card::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;z-index:3;pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(245,211,121,.14) 45%,rgba(245,211,121,.24) 50%,rgba(245,211,121,.14) 55%,transparent);
+  transform:skewX(-18deg);transition:left .75s ease}
+.card:hover::after{left:135%}
+.score-badge{border:1px solid rgba(23,19,16,.3);box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 18px rgba(232,184,75,.28)}
+/* скелетоны загрузки каталога */
+.skl{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:13px}
+.skl::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(232,184,75,.08) 50%,transparent 70%);
+  animation:shimmer 1.5s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.skl-cover{aspect-ratio:2/3;background:var(--panel2)}
+.skl-line{height:12px;border-radius:6px;background:var(--panel2);margin:12px 16px 0}
+.skl-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:22px;margin-top:30px}
+.load-state{padding:56px 0 30px}
+.load-state h1{margin:14px 0 4px}
+.load-reel{display:inline-block;width:38px;height:38px;border-radius:50%;margin-top:22px;
+  border:3px dashed rgba(232,184,75,.6);animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* импорт: статусы строк */
+.tag-dup{display:inline-block;font:700 10px var(--mono);letter-spacing:.06em;color:#f0a868;
+  background:rgba(224,145,47,.12);border:1px solid rgba(224,145,47,.45);padding:2.5px 9px;border-radius:100px;white-space:nowrap}
+.tag-new{display:inline-block;font:700 10px var(--mono);letter-spacing:.06em;color:var(--green);
+  background:rgba(127,201,143,.1);border:1px solid rgba(127,201,143,.4);padding:2.5px 9px;border-radius:100px;white-space:nowrap}
+.imp-sumrow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.imp-opt{display:flex;align-items:center;gap:10px;color:var(--mut);font:600 13px var(--body);cursor:pointer;user-select:none;transition:.2s}
+.imp-opt:hover{color:var(--text)}
+.imp-opt input{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
 .preview-grid{grid-template-columns:230px}
 .preview-grid .card{cursor:default}
 .preview-grid .card:hover{transform:none;box-shadow:none;border-color:var(--line)}
@@ -461,7 +490,13 @@ textarea.inp{resize:vertical;min-height:90px;line-height:1.55}
 .m-desc{color:#c8c4bc;font-size:15px;border-left:3px solid var(--gold);padding-left:14px;margin-bottom:24px}
 .m-scores{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
 .m-verdict{flex:1;min-width:230px}
-.verdict{font-family:var(--disp);font-weight:700;font-size:16.5px;margin:12px 0 16px}
+/* вердикт — «штамп» цензора */
+.verdict{font-family:var(--disp);font-weight:700;font-size:13.5px;letter-spacing:.11em;text-transform:uppercase;
+  display:inline-block;border:2.5px solid currentColor;border-radius:9px;padding:9px 16px;margin:16px 0 18px;
+  transform:rotate(-2.4deg);opacity:.93;transition:transform .3s ease}
+.verdict:hover{transform:rotate(0deg) scale(1.02)}
+.imdb-big{transition:transform .25s ease,box-shadow .25s ease}
+.imdb-big:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(245,197,24,.25)}
 .bars{display:flex;flex-direction:column;gap:11px}
 .bar-row{display:grid;grid-template-columns:105px 1fr 38px;gap:10px;align-items:center;font:600 12px var(--body);color:var(--mut)}
 .bar{background:#26262e;border-radius:100px;height:9px;overflow:hidden}
@@ -626,6 +661,7 @@ var SEED = [
 
 var S = {
   db: false,
+  loading: true,
   movies: [],
   q: '', genre: 'all', sort: 'new',
   view: 'site',
@@ -779,7 +815,21 @@ function renderTicker(){
 }
 
 /* ---------- главная ---------- */
+function sklCards(){
+  var out = '';
+  for (var i = 0; i < 8; i++){
+    out += '<div class="skl"><div class="skl-cover"></div>'
+      + '<div class="skl-line" style="width:72%"></div>'
+      + '<div class="skl-line" style="width:45%"></div>'
+      + '<div class="skl-line" style="width:85%;margin-bottom:18px"></div></div>';
+  }
+  return out;
+}
 function siteHTML(){
+  if (S.loading) return '<section class="load-state reveal in"><div class="kicker">✦ кинометр</div>'
+    + '<h1 class="disp">Разматываем плёнку…</h1>'
+    + '<p class="sub">Загружаем афишу каталога</p><div class="load-reel"></div>'
+    + '<div class="skl-row">' + sklCards() + '</div></section>';
   var latest = S.movies.slice().sort(function(a,b){
     return ((b.created_at||'') > (a.created_at||'') ? 1 : -1) || ((b.id||0) - (a.id||0));
   })[0];
@@ -1120,46 +1170,137 @@ function parseCSV(text){
   }
   return out;
 }
+/* «всеядный» JSON: прощает висячие запятые и ключи без кавычек */
+function lenientJSON(text){
+  try { return JSON.parse(text); } catch(e){}
+  var t2 = text.replace(/,\s*([}\]])/g, '$1');
+  try { return JSON.parse(t2); } catch(e){}
+  try { return JSON.parse(t2.replace(/'/g, '"')); } catch(e){ return null; }
+}
+/* достаёт массив фильмов из корня: [ ... ] или { "films": [ ... ] } и т.п. */
+function extractFilmArray(d){
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === 'object'){
+    var keys = ['films','movies','data','items','list','results','rows'];
+    for (var i = 0; i < keys.length; i++){ if (Array.isArray(d[keys[i]])) return d[keys[i]]; }
+    for (var k in d){ if (Object.prototype.hasOwnProperty.call(d, k) && Array.isArray(d[k])) return d[k]; }
+  }
+  return null;
+}
+/* гибкое сопоставление чужих полей с нашими (экспорты с разных сайтов) */
+function mapForeignFilm(o){
+  if (!o || typeof o !== 'object') return null;
+  function pick(){
+    for (var i = 0; i < arguments.length; i++){
+      var v = o[arguments[i]];
+      if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+    }
+    return '';
+  }
+  var title = pick('title','name','film','movie','ru_title');
+  if (!title) return null;
+  var year  = pick('year','release_year');
+  var imdb  = pick('imdb_rating','imdb_score','imdb','rating_imdb');
+  var admin = pick('reactor_rating','admin_rating','admin_score','site_rating','my_rating','our_rating','rating','score');
+  var desc  = pick('comment','description','desc','about','annotation','text');
+  var cover = pick('image_url','cover_url','poster_url','poster','image','img','cover','pic','photo');
+  var orig  = pick('original_title','orig_title','en_title','title_en');
+  var country  = pick('country','countries');
+  var director = pick('director','directors');
+  var duration = pick('duration','runtime','time_min','length');
+  var genres = o.genres !== undefined ? o.genres : (o.genre !== undefined ? o.genre : []);
+  if (typeof genres === 'string'){
+    try { var gd = JSON.parse(genres); genres = Array.isArray(gd) ? gd : genres.split(/[,;]/); }
+    catch(e){ genres = genres.split(/[,;]/); }
+  }
+  if (typeof country  === 'object' && country)  country  = Array.isArray(country)  ? country.join(', ')  : '';
+  if (typeof director === 'object' && director) director = Array.isArray(director) ? director.join(', ') : '';
+  /* чужие отзывы — добавляем к описанию */
+  if (Array.isArray(o.reviews) && o.reviews.length){
+    var parts = [];
+    for (var i = 0; i < o.reviews.length && parts.length < 3; i++){
+      var r = o.reviews[i];
+      if (!r) continue;
+      if (typeof r === 'object'){
+        var txt = r.text || r.comment || r.body || r.content || r.review || '';
+        var who = r.author || r.name || r.user || r.login || '';
+        if (txt) parts.push((who ? who + ': ' : '') + txt);
+      } else if (typeof r === 'string' && r.trim()) parts.push(r.trim());
+    }
+    if (parts.length) desc = (desc ? desc + '\n\n' : '') + parts.join('\n\n');
+  }
+  return {
+    title: String(title).trim(),
+    original_title: String(orig).trim(),
+    year: year === '' ? null : (parseInt(year, 10) || null),
+    country: String(country).trim(),
+    director: String(director).trim(),
+    duration: parseInt(duration, 10) || 0,
+    genres: Array.isArray(genres) ? genres.map(function(g){ return String(g).trim(); }).filter(Boolean) : [],
+    description: String(desc).trim(),
+    cover_url: String(cover).trim(),
+    admin_score: parseFloat(String(admin).replace(',', '.')) || 0,
+    imdb_score: parseFloat(String(imdb).replace(',', '.')) || 0
+  };
+}
 function parseImportText(text){
-  text = text.trim();
+  text = String(text || '').trim();
   if (!text) return [];
   if (text.charAt(0) === '[' || text.charAt(0) === '{'){
-    try {
-      var d = JSON.parse(text);
-      if (d && !Array.isArray(d) && Array.isArray(d.movies)) d = d.movies;
-      if (!Array.isArray(d)) d = [d];
-      return d.filter(function(x){ return x && x.title; });
-    } catch(e){ toast('JSON не распознан — проверьте синтаксис', 'err'); return []; }
+    var d = lenientJSON(text);
+    if (d === null){ toast('JSON не распознан — проверьте синтаксис файла', 'err'); return []; }
+    var arr = extractFilmArray(d);
+    if (!arr){ toast('В JSON не найден список фильмов (ожидался массив)', 'err'); return []; }
+    return arr;
   }
   return parseCSV(text);
 }
-function normalizeRows(rows){
-  return rows.map(function(r){
-    return {
-      title: String(r.title || ''),
-      original_title: String(r.original_title || ''),
-      year: r.year ? parseInt(r.year, 10) : null,
-      country: String(r.country || ''),
-      director: String(r.director || ''),
-      duration: parseInt(r.duration, 10) || 0,
-      genres: r.genres || [],
-      description: String(r.description || ''),
-      cover_url: String(r.cover_url || ''),
-      admin_score: parseFloat(String(r.admin_score || '0').replace(',', '.')) || 0,
-      imdb_score: parseFloat(String(r.imdb_score || '0').replace(',', '.')) || 0
-    };
-  }).filter(function(r){ return r.title; });
+function normalizeRows(rawRows){
+  var existing = {};
+  S.movies.forEach(function(m){
+    existing[String(m.title || '').trim().toLowerCase() + '|' + (m.year || '')] = 1;
+  });
+  var batch = {}, out = [];
+  rawRows.forEach(function(r){
+    var m = mapForeignFilm(r);
+    if (!m) return;
+    var key = m.title.toLowerCase() + '|' + (m.year || '');
+    if (batch[key]) return;           /* дубль внутри самого файла */
+    batch[key] = 1;
+    m.dup = existing[key] ? 1 : 0;    /* уже есть в каталоге */
+    out.push(m);
+  });
+  return out;
 }
 function parseImport(){
   var ta = $('#imp-text');
   var rows = normalizeRows(parseImportText(ta ? ta.value : ''));
-  if (!rows.length){ toast('Не удалось распознать фильмы', 'err'); return; }
+  if (!rows.length){ toast('Не удалось распознать фильмы в файле', 'err'); return; }
   S.admin.importRows = rows;
+  if (S.admin.importSkipDups === undefined) S.admin.importSkipDups = true;
   render();
 }
-function doImport(){
+function importEffective(){
   var rows = S.admin.importRows || [];
-  if (!rows.length){ toast('Нет строк для импорта', 'err'); return; }
+  var skip = S.admin.importSkipDups !== false;
+  return rows.filter(function(r){ return !(r.dup && skip); }).map(function(r){
+    var c = Object.assign({}, r); delete c.dup; return c;
+  });
+}
+function updateImportSummary(){
+  var rows = S.admin.importRows || [];
+  var dupN = rows.filter(function(r){ return r.dup; }).length;
+  var eff = importEffective();
+  var sm = $('#imp-summary');
+  if (sm) sm.innerHTML = 'Распознано: <b style="color:var(--gold2)">' + rows.length + '</b>'
+    + (dupN ? ' · уже в каталоге: <b style="color:#e0912f">' + dupN + '</b>' : '')
+    + ' · к импорту: <b style="color:var(--green)">' + eff.length + '</b>';
+  var go = $('#imp-go');
+  if (go){ go.textContent = 'Импортировать ' + eff.length + ' шт.'; go.disabled = !eff.length; }
+}
+function doImport(){
+  var rows = importEffective();
+  if (!rows.length){ toast('Нет новых фильмов для импорта', 'err'); return; }
   if (S.db){
     aapi('import', { movies: rows }).then(function(r){
       if (r && r.ok){
@@ -1187,16 +1328,29 @@ function download(name, content, type){
 }
 function tabImportHTML(){
   var rows = S.admin.importRows;
+  var skip = S.admin.importSkipDups !== false;
+  var effN = rows ? rows.filter(function(r){ return !(r.dup && skip); }).length : 0;
   var prev = '';
   if (rows && rows.length){
-    prev = '<div class="imp-prev"><div class="sub mono" style="margin-bottom:10px">Распознано фильмов: ' + rows.length + '</div>'
-      + '<div class="tbl-wrap"><table class="tbl imp-tbl"><thead><tr><th>Название</th><th>Год</th><th>Жанры</th><th>Админ</th><th>IMDb</th></tr></thead><tbody>'
-      + rows.slice(0, 6).map(function(r){
-        return '<tr><td><b>' + esc(r.title) + '</b></td><td class="mono">' + (r.year || '—') + '</td>'
-          + '<td class="mono" style="font-size:12.5px;color:var(--mut)">' + esc(Array.isArray(r.genres) ? r.genres.join(', ') : (r.genres || '')) + '</td>'
-          + '<td class="mono">' + Number(r.admin_score).toFixed(1) + '</td><td class="mono">' + Number(r.imdb_score).toFixed(1) + '</td></tr>';
+    var dupN = rows.filter(function(r){ return r.dup; }).length;
+    prev = '<div class="preview-zone">'
+      + '<div class="imp-sumrow">'
+      + '<div class="sub mono" id="imp-summary" style="margin:0">Распознано: <b style="color:var(--gold2)">' + rows.length + '</b>'
+        + (dupN ? ' · уже в каталоге: <b style="color:#e0912f">' + dupN + '</b>' : '')
+        + ' · к импорту: <b style="color:var(--green)">' + effN + '</b></div>'
+      + '<label class="imp-opt"><input type="checkbox" id="imp-skip-dups"' + (skip ? ' checked' : '') + '>пропускать фильмы, которые уже есть в каталоге</label>'
+      + '</div>'
+      + '<div class="tbl-wrap"><table class="tbl imp-tbl"><thead><tr><th>Название</th><th>Год</th><th>Админ</th><th>IMDb</th><th>Статус</th></tr></thead><tbody>'
+      + rows.slice(0, 8).map(function(r){
+        return '<tr><td><b>' + esc(r.title) + '</b>'
+          + (r.cover_url ? ' <span class="mono" style="font-size:10.5px;color:var(--green)">постер ✓</span>' : '')
+          + (r.genres && r.genres.length ? ' <span class="mono" style="font-size:10.5px;color:var(--mut)">· ' + esc(r.genres.slice(0,3).join(', ')) + '</span>' : '') + '</td>'
+          + '<td class="mono">' + (r.year || '—') + '</td>'
+          + '<td class="mono" style="color:var(--gold2)">' + Number(r.admin_score).toFixed(1) + '</td>'
+          + '<td class="mono">' + Number(r.imdb_score).toFixed(1) + '</td>'
+          + '<td>' + (r.dup ? '<span class="tag-dup">уже есть</span>' : '<span class="tag-new">новый</span>') + '</td></tr>';
       }).join('')
-      + (rows.length > 6 ? '<tr><td colspan="5" class="mono" style="color:var(--mut)">… и ещё ' + (rows.length - 6) + '</td></tr>' : '')
+      + (rows.length > 8 ? '<tr><td colspan="5" class="mono" style="color:var(--mut)">… и ещё ' + (rows.length - 8) + '</td></tr>' : '')
       + '</tbody></table></div></div>';
   }
   return '<div class="panel reveal in"><div class="panel-head"><h3 class="disp sm">Импорт фильмов</h3>'
@@ -1205,12 +1359,13 @@ function tabImportHTML(){
     + '<button class="btn btn-ghost btn-sm" id="export-json" type="button">Экспорт каталога</button></div></div>'
     + '<label class="drop" id="drop"><input type="file" id="imp-file" accept=".json,.csv,.txt" hidden>'
     + '<div class="drop-in"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#e8b84b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>'
-    + '<b>Перетащите файл JSON или CSV</b><span class="mono" style="color:var(--mut);font-size:12px">или кликните, чтобы выбрать с диска</span></div></label>'
-    + '<div class="lbl" style="margin:20px 0 8px">Или вставьте содержимое (JSON-массив / CSV с заголовком)</div>'
-    + '<textarea class="inp mono" id="imp-text" rows="6" placeholder="title,year,genres,admin_score,imdb_score,cover_url …"></textarea>'
+    + '<b>Перетащите файл с фильмами</b>'
+    + '<span class="mono" style="color:var(--mut);font-size:12px">JSON или CSV · понимает экспорт с полями title, year, imdb_rating, reactor_rating, comment, image_url</span></div></label>'
+    + '<div class="lbl" style="margin:20px 0 8px">Или вставьте содержимое файла</div>'
+    + '<textarea class="inp mono" id="imp-text" rows="6" placeholder="{ &quot;films&quot;: [ { &quot;title&quot;: &quot;Прибытие&quot;, &quot;year&quot;: 2016, &quot;imdb_rating&quot;: &quot;7.9&quot;, &quot;reactor_rating&quot;: &quot;8.0&quot;, &quot;comment&quot;: &quot;…&quot;, &quot;image_url&quot;: &quot;https://…&quot; } ] }"></textarea>'
     + '<div class="adm-actions" style="margin-top:14px"><button class="btn btn-ghost" id="imp-parse" type="button">Распознать</button>'
     + (rows && rows.length
-      ? '<button class="btn btn-gold" id="imp-go" type="button">Импортировать ' + rows.length + ' шт.</button>'
+      ? '<button class="btn btn-gold" id="imp-go" type="button"' + (effN ? '' : ' disabled') + '>Импортировать ' + effN + ' шт.</button>'
         + '<button class="btn btn-ghost" id="imp-clear" type="button">Очистить</button>'
       : '') + '</div>'
     + prev + '</div>';
@@ -1342,6 +1497,8 @@ function adminBind(){
   var ip = $('#imp-parse'); if (ip) ip.addEventListener('click', parseImport);
   var ig = $('#imp-go');    if (ig) ig.addEventListener('click', doImport);
   var ic = $('#imp-clear'); if (ic) ic.addEventListener('click', function(){ S.admin.importRows = null; render(); });
+  var isd = $('#imp-skip-dups');
+  if (isd) isd.addEventListener('change', function(){ S.admin.importSkipDups = isd.checked; updateImportSummary(); });
   var tj = $('#tpl-json');
   if (tj) tj.addEventListener('click', function(){
     download('kinometr-template.json', JSON.stringify([{
@@ -1410,6 +1567,7 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeM
 function init(){
   var s = LS.get('session', null);
   if (s && s.user){ S.admin.user = s.user; S.admin.token = s.token || null; }
+  syncHash();                      /* сразу показываем скелетоны загрузки */
   api('ping').then(function(p){
     S.db = !!(p && p.ok && p.db);
     return loadMovies();
@@ -1417,6 +1575,7 @@ function init(){
     S.db = false;
     return loadMovies();
   }).then(function(){
+    S.loading = false;
     syncHash();
   });
 }
