@@ -204,16 +204,24 @@ if (isset($_GET['api'])) {
     if ($act === 'save') {
         $m = normalize_movie($in);
         if (!$m) jout(['ok' => false, 'error' => 'Название фильма обязательно']);
+        /* типы: title,orig_title,year,country,director,duration,genres,desc,cover,admin,imdb */
+        $types = 'ssississsdd';
         if (!empty($in['id'])) {
-            $st = $c->prepare("UPDATE `movies` SET `title`=?,`original_title`=?,`year`=?,`country`=?,`director`=?,`duration`=?,`genres`=?,`description`=?,`cover_url`=?,`admin_score`=?,`imdb_score`=? WHERE `id`=?");
             $id = (int)$in['id'];
-            $st->bind_param('ssisssissddi', $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score'],$id);
-            $st->execute(); $st->close();
+            $st = $c->prepare("UPDATE `movies` SET `title`=?,`original_title`=?,`year`=?,`country`=?,`director`=?,`duration`=?,`genres`=?,`description`=?,`cover_url`=?,`admin_score`=?,`imdb_score`=? WHERE `id`=?");
+            if (!$st) jout(['ok' => false, 'error' => 'SQL-ошибка (prepare): ' . $c->error]);
+            if (!@$st->bind_param($types . 'i', $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score'],$id))
+                jout(['ok' => false, 'error' => 'Ошибка привязки полей (update)']);
+            if (!@$st->execute()) jout(['ok' => false, 'error' => 'Ошибка записи: ' . $st->error]);
+            $st->close();
             jout(['ok' => true, 'movies' => fetch_all_movies()]);
         }
         $st = $c->prepare("INSERT INTO `movies` (`title`,`original_title`,`year`,`country`,`director`,`duration`,`genres`,`description`,`cover_url`,`admin_score`,`imdb_score`) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-        $st->bind_param('ssisssissdd', $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score']);
-        $st->execute(); $st->close();
+        if (!$st) jout(['ok' => false, 'error' => 'SQL-ошибка (prepare): ' . $c->error]);
+        if (!@$st->bind_param($types, $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score']))
+            jout(['ok' => false, 'error' => 'Ошибка привязки полей (insert)']);
+        if (!@$st->execute()) jout(['ok' => false, 'error' => 'Ошибка записи: ' . $st->error]);
+        $st->close();
         jout(['ok' => true, 'movies' => fetch_all_movies()]);
     }
 
@@ -226,17 +234,20 @@ if (isset($_GET['api'])) {
 
     if ($act === 'import') {
         $list = isset($in['movies']) && is_array($in['movies']) ? $in['movies'] : [];
-        $added = 0;
+        $added = 0; $skipped = 0; $lastErr = '';
         $st = $c->prepare("INSERT INTO `movies` (`title`,`original_title`,`year`,`country`,`director`,`duration`,`genres`,`description`,`cover_url`,`admin_score`,`imdb_score`) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+        if (!$st) jout(['ok' => false, 'error' => 'SQL-ошибка (prepare): ' . $c->error]);
+        $types = 'ssississsdd';
         foreach ($list as $d) {
             $m = normalize_movie($d);
-            if (!$m) continue;
-            $st->bind_param('ssisssissdd', $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score']);
-            $st->execute();
+            if (!$m) { $skipped++; continue; }
+            if (!@$st->bind_param($types, $m['title'],$m['original_title'],$m['year'],$m['country'],$m['director'],$m['duration'],$m['genres'],$m['description'],$m['cover_url'],$m['admin_score'],$m['imdb_score']))
+                { $skipped++; $lastErr = 'привязка полей'; continue; }
+            if (!@$st->execute()) { $skipped++; $lastErr = $st->error; continue; }
             $added++;
         }
         $st->close();
-        jout(['ok' => true, 'added' => $added, 'movies' => fetch_all_movies()]);
+        jout(['ok' => true, 'added' => $added, 'skipped' => $skipped, 'movies' => fetch_all_movies()]);
     }
 
     if ($act === 'admins') {
@@ -285,12 +296,12 @@ if (isset($_GET['api'])) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* ═══════════ КИНОМЕТР · дизайн «золото на угле» ═══════════ */
+/* ═══════════ КИНОМЕТР · «золотой кинозал» — золото на угле ═══════════ */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0c0c0e; --bg2:#121216; --panel:#16161c; --panel2:#1b1b22;
-  --line:#26262e; --line2:#34343e;
-  --text:#eae6dc; --mut:#9a97a3;
+  --bg:#0b0b0d; --bg2:#111114; --panel:#15151b; --panel2:#1b1b22;
+  --line:#25252d; --line2:#34343e;
+  --text:#ece7db; --mut:#9d99a6;
   --gold:#e8b84b; --gold2:#f5d379; --gold3:#a8781f; --imdb:#f5c518;
   --red:#e05a4e; --green:#7fc98f;
   --disp:'Unbounded','Arial Black',sans-serif;
@@ -298,47 +309,90 @@ if (isset($_GET['api'])) {
   --mono:'JetBrains Mono','Consolas',monospace;
 }
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font:500 16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-::selection{background:rgba(232,184,75,.35)}
+body{background:
+    radial-gradient(1200px 500px at 85% -10%,rgba(232,184,75,.07),transparent 60%),
+    radial-gradient(900px 500px at -10% 30%,rgba(168,120,31,.05),transparent 55%),
+    var(--bg);
+  color:var(--text);font:500 16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(232,184,75,.4);color:#171310}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .mono{font-family:var(--mono)}
 .disp{font-family:var(--disp);font-weight:700;letter-spacing:-.01em}
 
-/* атмосфера: зерно плёнки + золотые пятна света */
-.grain{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:.055;
+/* ── атмосфера: зерно, свет, пыль, виньетка, киноплёнка по краям ── */
+.grain{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.7'/></svg>")}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5) 100%)}
 .glow{position:fixed;width:640px;height:640px;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
-.g1{top:-240px;left:-180px;background:#e8b84b;opacity:.12}
-.g2{bottom:-280px;right:-220px;background:#8a5a12;opacity:.09}
+.g1{top:-240px;left:-180px;background:#e8b84b;opacity:.13;animation:glowdrift 14s ease-in-out infinite alternate}
+.g2{bottom:-280px;right:-220px;background:#8a5a12;opacity:.1;animation:glowdrift 18s ease-in-out infinite alternate-reverse}
+@keyframes glowdrift{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,40px) scale(1.12)}}
+
+/* парящая золотая пыль */
+.dust{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.dust i{position:absolute;bottom:-12px;width:4px;height:4px;border-radius:50%;background:var(--gold2);
+  opacity:0;box-shadow:0 0 8px rgba(245,211,121,.9);animation:rise linear infinite}
+@keyframes rise{
+  0%{transform:translateY(0) translateX(0);opacity:0}
+  8%{opacity:.85}
+  90%{opacity:.5}
+  100%{transform:translateY(-105vh) translateX(30px);opacity:0}
+}
+
+/* киноплёнка с перфорацией — вертикальные полосы по краям экрана */
+.filmstrip{position:fixed;top:0;bottom:0;width:34px;z-index:3;pointer-events:none;opacity:.5;
+  background:
+    repeating-linear-gradient(180deg,transparent 0 14px,rgba(232,184,75,.28) 14px 24px,transparent 24px 38px),
+    linear-gradient(90deg,rgba(21,21,27,.9),rgba(21,21,27,.4))}
+.filmstrip.left{left:0;border-right:1px solid rgba(232,184,75,.15)}
+.filmstrip.right{right:0;border-left:1px solid rgba(232,184,75,.15);
+  background:
+    repeating-linear-gradient(180deg,transparent 0 14px,rgba(232,184,75,.28) 14px 24px,transparent 24px 38px),
+    linear-gradient(270deg,rgba(21,21,27,.9),rgba(21,21,27,.4))}
+@media(max-width:1240px){.filmstrip{display:none}}
 
 /* золотая «аварийная» полоса — фирменный мотив */
 .stripes{background:repeating-linear-gradient(135deg,var(--gold) 0 12px,#241d0c 12px 24px)}
+/* кинолента-разделитель с перфорацией */
+.filmd{position:relative;height:26px;margin:0;border-top:1px solid rgba(232,184,75,.25);border-bottom:1px solid rgba(232,184,75,.25);
+  background:
+    radial-gradient(circle at 12px 13px,#0b0b0d 4px,transparent 4.5px) 0 0/26px 26px repeat-x,
+    linear-gradient(180deg,rgba(232,184,75,.06),rgba(232,184,75,.02))}
 
-/* бегущая строка оценок */
-#ticker{position:relative;z-index:5;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#1c1508;overflow:hidden}
+/* бегущая строка — лайтбокс-маркиза кинотеатра */
+#ticker{position:relative;z-index:5;overflow:hidden;color:#1c1508;
+  background:linear-gradient(180deg,var(--gold2),var(--gold) 55%,var(--gold3));
+  box-shadow:0 6px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+#ticker::before,#ticker::after{content:'';position:absolute;top:0;bottom:0;width:70px;z-index:2;pointer-events:none}
+#ticker::before{left:0;background:linear-gradient(90deg,rgba(11,11,13,.55),transparent)}
+#ticker::after{right:0;background:linear-gradient(270deg,rgba(11,11,13,.55),transparent)}
 #ticker.off{display:none}
-#ticker-track{display:flex;align-items:center;gap:28px;width:max-content;padding:8px 0;
+#ticker-track{display:flex;align-items:center;gap:30px;width:max-content;padding:9px 0;
   font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
   animation:tickmove 46s linear infinite}
 #ticker:hover #ticker-track{animation-play-state:paused}
-.tk b{background:#1c1508;color:var(--gold2);padding:3px 8px;border-radius:5px;margin-left:7px}
-.tk-sep{opacity:.55}
+.tk b{background:#1c1508;color:var(--gold2);padding:3px 8px;border-radius:5px;margin-left:7px;
+  box-shadow:inset 0 0 0 1px rgba(245,211,121,.25)}
+.tk-sep{opacity:.6;font-size:13px}
 @keyframes tickmove{to{transform:translateX(-50%)}}
 
 /* шапка */
-#hdr{position:sticky;top:0;z-index:50;background:rgba(12,12,14,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+#hdr{position:sticky;top:0;z-index:50;background:rgba(11,11,13,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .hdr-in{display:flex;align-items:center;justify-content:space-between;height:66px}
 .logo{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.05em}
 .logo b{color:var(--gold)}
 .logo svg{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .logo:hover svg{transform:rotate(180deg)}
-.hdr-nav{display:flex;align-items:center;gap:20px}
-.nav-link{font:700 12.5px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--mut);transition:.2s;padding:4px 0}
-.nav-link:hover{color:var(--gold)}
-.nav-admin{border:1px solid var(--line2);padding:8px 15px;border-radius:9px}
-.nav-admin:hover{border-color:var(--gold);color:var(--gold)}
+.hdr-nav{display:flex;align-items:center;gap:22px}
+.nav-link{position:relative;font:700 12.5px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--mut);transition:color .2s;padding:4px 0}
+.nav-link:not(.nav-admin)::after{content:'';position:absolute;left:0;right:100%;bottom:-2px;height:2px;background:var(--gold);transition:right .28s cubic-bezier(.2,.7,.2,1)}
+.nav-link:not(.nav-admin):hover{color:var(--gold)}
+.nav-link:not(.nav-admin):hover::after{right:0}
+.nav-admin{border:1px solid var(--line2);padding:8px 15px;border-radius:9px;transition:.2s}
+.nav-admin:hover{border-color:var(--gold);color:var(--gold);background:rgba(232,184,75,.08)}
 .db-state{display:flex;align-items:center;gap:8px;font:600 11px var(--mono);color:var(--mut);letter-spacing:.04em}
 .db-state em{font-style:normal}
 .db-dot{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block}
@@ -348,16 +402,32 @@ button{font-family:inherit}
 
 #view{position:relative;z-index:1;padding:44px 0 70px;min-height:62vh}
 
-/* герой: свежее измерение */
-.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:48px;align-items:center;padding:30px 0 44px}
-.kicker{display:inline-block;font:700 11.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
-  border:1px solid rgba(232,184,75,.4);padding:7px 14px;border-radius:100px;margin-bottom:20px;background:rgba(232,184,75,.06)}
-.hero h1{font-size:clamp(32px,4.8vw,60px);line-height:1.05;margin-bottom:16px}
+/* герой: свежее измерение — постер в кадре + проекционный луч */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:52px;align-items:center;padding:44px 0 50px;position:relative}
+.kicker{display:inline-flex;align-items:center;gap:9px;font:700 11.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
+  border:1px solid rgba(232,184,75,.4);padding:7px 15px;border-radius:100px;margin-bottom:22px;background:rgba(232,184,75,.07)}
+.kicker .rec{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px rgba(224,90,78,.9);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hero h1{font-size:clamp(34px,5vw,64px);line-height:1.03;margin-bottom:18px;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.hero h1 .hl{color:var(--gold);position:relative;white-space:nowrap}
 .hero-meta{color:var(--mut);font-size:14px;margin-bottom:15px;letter-spacing:.04em}
 .hero-genres{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .lead{color:#c8c4bc;max-width:56ch;font-size:16.5px}
-.hero-btns{display:flex;gap:14px;margin-top:26px;flex-wrap:wrap}
-.hero-dial{display:flex;justify-content:center}
+.hero-btns{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap}
+/* постер с проекционным лучом */
+.hero-poster{position:relative;justify-self:center;perspective:900px}
+.hero-poster .frame{position:relative;width:min(300px,64vw);border-radius:16px;overflow:hidden;
+  border:1px solid rgba(232,184,75,.35);box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 60px rgba(232,184,75,.12);
+  transform:rotateY(-6deg) rotateX(2deg);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.hero-poster:hover .frame{transform:rotateY(0) rotateX(0)}
+.hero-poster .frame img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover}
+.hero-poster .beam{position:absolute;top:-70px;left:50%;width:340px;height:340px;transform:translateX(-50%);pointer-events:none;
+  background:conic-gradient(from 200deg at 50% 0%,transparent 40%,rgba(245,211,121,.16) 50%,transparent 60%);
+  filter:blur(6px);animation:beamsway 7s ease-in-out infinite alternate}
+@keyframes beamsway{from{transform:translateX(-50%) rotate(-7deg)}to{transform:translateX(-50%) rotate(7deg)}}
+.hero-poster .tag{position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);white-space:nowrap;
+  background:var(--gold);color:#171310;font:700 12px var(--mono);letter-spacing:.08em;padding:8px 18px;border-radius:100px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .dial-wrap{text-align:center}
 .dial{display:block;margin:0 auto;filter:drop-shadow(0 0 28px rgba(232,184,75,.16))}
 .dial-num{font:700 34px var(--mono);fill:var(--gold2)}
@@ -365,55 +435,65 @@ button{font-family:inherit}
 .imdb-big{display:inline-block;margin-top:14px;background:var(--imdb);color:#171310;font:700 14px var(--mono);padding:8px 15px;border-radius:9px;letter-spacing:.05em}
 
 /* статистика — «билетная» лента с перфорацией */
-.statbar{display:flex;margin:6px 0 56px;border:1px solid rgba(232,184,75,.35);border-radius:14px;
-  background:linear-gradient(180deg,var(--panel),var(--bg2));overflow:hidden}
-.stat{flex:1;padding:22px 26px;display:flex;flex-direction:column;gap:5px}
+.statbar{display:flex;margin:34px 0 58px;border:1px solid rgba(232,184,75,.35);border-radius:16px;position:relative;
+  background:linear-gradient(180deg,var(--panel),var(--bg2));overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,.4)}
+.statbar::before,.statbar::after{content:'';position:absolute;top:0;bottom:0;width:14px;z-index:2;
+  background:radial-gradient(circle at 7px 10px,var(--bg) 3.5px,transparent 4px) 0 0/14px 20px repeat-y}
+.statbar::before{left:0}.statbar::after{right:0}
+.stat{flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:6px;transition:background .25s}
+.stat:hover{background:rgba(232,184,75,.05)}
 .stat + .stat{border-left:2px dashed rgba(232,184,75,.3)}
-.stat b{font-size:33px;color:var(--gold2);line-height:1}
+.stat b{font-size:36px;color:var(--gold2);line-height:1;text-shadow:0 0 24px rgba(232,184,75,.25)}
 .stat span{font:700 10.5px var(--body);text-transform:uppercase;letter-spacing:.13em;color:var(--mut)}
 
 /* каталог */
-.cat-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:20px}
-.cat-head h2{font-size:clamp(25px,3.3vw,38px)}
-.cat-head h2 em{font-style:normal;color:var(--gold)}
+.cat-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:22px}
+.cat-head h2{font-size:clamp(26px,3.4vw,40px)}
+.cat-head h2 em{font-style:normal;color:var(--gold);position:relative}
+.cat-head h2 em::after{content:'';position:absolute;left:0;right:0;bottom:2px;height:7px;background:rgba(232,184,75,.22);z-index:-1;border-radius:3px}
 .sub{color:var(--mut);font-size:14px;margin-top:6px}
 .cat-tools{display:flex;gap:12px;flex:1;max-width:560px;min-width:280px}
 #search{flex:1}
 .sort{width:205px}
-.chips{display:flex;flex-wrap:wrap;gap:9px;margin:6px 0 28px}
-.chip{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:7px 15px;border-radius:100px;
-  font:600 13px var(--body);cursor:pointer;transition:.2s}
-.chip:hover{border-color:var(--gold);color:var(--gold)}
-.chip.on{background:var(--gold);border-color:var(--gold);color:#171310}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:24px}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin:6px 0 30px}
+.chip{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:7px 16px;border-radius:100px;
+  font:600 13px var(--body);cursor:pointer;transition:.22s}
+.chip:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#171310;box-shadow:0 6px 20px rgba(232,184,75,.3)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:26px}
 .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:70px 20px;border:1px dashed var(--line2);border-radius:14px}
 
-/* карточка фильма — с золотой полосой сверху */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden;cursor:pointer;position:relative;
+/* карточка фильма — постер со скримом, золотая полоса, блик */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;
   transition:transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s,border-color .28s}
-.card:hover{transform:translateY(-7px);border-color:rgba(232,184,75,.55);
-  box-shadow:0 18px 44px rgba(0,0,0,.5),0 10px 34px rgba(232,184,75,.13)}
-.card-stripe{height:6px}
+.card:hover{transform:translateY(-8px);border-color:rgba(232,184,75,.55);
+  box-shadow:0 22px 50px rgba(0,0,0,.55),0 12px 40px rgba(232,184,75,.15)}
+.card-stripe{height:5px}
 .card-cover{position:relative;aspect-ratio:2/3;overflow:hidden;background:var(--bg2)}
-.card-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
-.card:hover .card-cover img{transform:scale(1.06)}
-.score-badge{position:absolute;top:10px;right:10px;font:700 15px var(--mono);color:#171310;padding:5px 10px;border-radius:9px;
-  box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.card-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+.card:hover .card-cover img{transform:scale(1.07)}
+.card-cover::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 30%,transparent 62%,rgba(11,11,13,.82))}
+.score-badge{position:absolute;top:10px;right:10px;z-index:2;font:700 15px var(--mono);color:#171310;padding:5px 11px;border-radius:9px;
+  border:1px solid rgba(23,19,16,.3);box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 18px rgba(232,184,75,.28)}
+.card-year{position:absolute;left:10px;bottom:10px;z-index:2;font:700 12px var(--mono);color:var(--gold2);letter-spacing:.06em;
+  background:rgba(11,11,13,.72);border:1px solid rgba(232,184,75,.3);padding:3px 10px;border-radius:7px;backdrop-filter:blur(4px)}
 .card-body{padding:15px 16px 16px}
-.card-title{font:700 15.5px/1.35 var(--body);margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:42px}
+.card-title{font:800 15.5px/1.35 var(--body);margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:42px;transition:color .2s}
+.card:hover .card-title{color:var(--gold2)}
 .card-meta{color:var(--mut);font-size:12.5px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-genres{display:flex;flex-wrap:wrap;gap:6px;min-height:24px}
 .chip-mini{font:600 11px var(--body);color:var(--gold2);background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.25);padding:3px 9px;border-radius:100px}
 .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding-top:12px;border-top:1px dashed var(--line2)}
 .imdb{font:700 11.5px var(--mono);background:var(--imdb);color:#171310;padding:3px 9px;border-radius:6px}
 .more{font:700 12px var(--body);color:var(--mut);transition:.2s}
-.card:hover .more{color:var(--gold)}
+.card:hover .more{color:var(--gold);letter-spacing:.02em}
 /* золотой блик, пробегающий по карточке при наведении */
 .card::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;z-index:3;pointer-events:none;
   background:linear-gradient(105deg,transparent,rgba(245,211,121,.14) 45%,rgba(245,211,121,.24) 50%,rgba(245,211,121,.14) 55%,transparent);
   transform:skewX(-18deg);transition:left .75s ease}
 .card:hover::after{left:135%}
-.score-badge{border:1px solid rgba(23,19,16,.3);box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 18px rgba(232,184,75,.28)}
 /* скелетоны загрузки каталога */
 .skl{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:13px}
 .skl::after{content:'';position:absolute;inset:0;
@@ -565,7 +645,7 @@ footer .stripes{height:5px}
 /* адаптив */
 @media(max-width:940px){
   .hero{grid-template-columns:1fr;gap:30px}
-  .hero-dial{order:-1}
+  .hero-poster{order:-1;margin-bottom:26px}
   .statbar{flex-wrap:wrap}
   .stat{flex:1 1 46%}
   .stat + .stat{border-left:none}
@@ -594,6 +674,10 @@ footer .stripes{height:5px}
 
 <div class="glow g1"></div>
 <div class="glow g2"></div>
+<div class="dust" id="dust"></div>
+<div class="filmstrip left"></div>
+<div class="filmstrip right"></div>
+<div class="vignette"></div>
 <div class="grain"></div>
 
 <div id="ticker"><div id="ticker-track"></div></div>
@@ -618,9 +702,13 @@ footer .stripes{height:5px}
 <footer>
   <div class="stripes"></div>
   <div class="wrap foot-in">
-    <span><b style="color:var(--gold)">КИНОМЕТР</b> — авторский каталог оценок: вердикт админа против IMDb</span>
-    <span class="mono">admin_score / imdb_score</span>
+    <div>
+      <b style="color:var(--gold);font-family:var(--disp);letter-spacing:.04em">КИНОМЕТР</b>
+      <span style="display:block;margin-top:4px">Авторский каталог оценок: вердикт админа против народного рейтинга IMDb.</span>
+    </div>
+    <span class="mono" style="align-self:center">admin_score ✦ imdb_score</span>
   </div>
+  <div class="filmd"></div>
 </footer>
 
 <div id="modal"></div>
@@ -850,9 +938,10 @@ function heroHTML(m){
     + '<p class="lead">Добавьте первый фильм через админ-панель — и он сразу появится здесь.</p>'
     + '<div class="hero-btns"><a class="btn btn-gold" href="#/admin">Открыть админку</a></div>'
     + '</div></section>';
+  var poster = m.cover_url ? esc(m.cover_url) : '';
   return '<section class="hero">'
     + '<div class="hero-txt">'
-    + '<div class="kicker">✦ свежее измерение</div>'
+    + '<div class="kicker"><i class="rec"></i> свежее измерение</div>'
     + '<h1 class="disp">' + esc(m.title) + '</h1>'
     + '<div class="hero-meta mono">' + (m.year || '—') + ' · ' + esc(m.director || 'режиссёр не указан') + (m.duration ? ' · ' + fmtDur(m.duration) : '') + '</div>'
     + '<div class="hero-genres">' + (m.genres||[]).map(function(g){ return '<span class="chip-mini">' + esc(g) + '</span>'; }).join('') + '</div>'
@@ -860,8 +949,13 @@ function heroHTML(m){
     + '<div class="hero-btns"><button class="btn btn-gold" data-open="' + m.id + '">Открыть карточку</button>'
     + '<a class="btn btn-ghost" href="#catalog" data-gocat>Весь каталог ↓</a></div>'
     + '</div>'
-    + '<div class="hero-dial"><div class="dial-wrap">' + dialSVG(m.admin_score, 230)
-    + '<div class="imdb-big">IMDb ' + Number(m.imdb_score).toFixed(1) + '</div></div></div>'
+    + '<div class="hero-poster">'
+    + '<div class="beam"></div>'
+    + '<div class="frame">' + (poster
+        ? '<img src="' + poster + '" alt="' + esc(m.title) + '" data-t="' + esc(m.title) + '" onerror="this.onerror=null;this.src=ph(this.dataset.t)">'
+        : '<img src="' + ph(m.title) + '" alt="' + esc(m.title) + '">') + '</div>'
+    + '<div class="tag">★ ' + Number(m.admin_score||0).toFixed(1) + ' / 10 · вердикт админа</div>'
+    + '</div>'
     + '</section>';
 }
 function statsHTML(){
@@ -886,7 +980,8 @@ function cardHTML(m, i, isStatic){
   return '<article class="card reveal" style="transition-delay:' + ((i % 8) * 55) + 'ms"' + (isStatic ? '' : ' data-open="' + m.id + '"') + '>'
     + '<div class="card-stripe stripes"></div>'
     + '<div class="card-cover"><img loading="lazy" src="' + esc(m.cover_url || '') + '" alt="' + esc(m.title) + '" data-t="' + esc(m.title) + '" onerror="this.onerror=null;this.src=ph(this.dataset.t)">'
-    + '<span class="score-badge" style="background:' + scoreColor(m.admin_score||0) + '">' + Number(m.admin_score||0).toFixed(1) + '</span></div>'
+    + '<span class="score-badge" style="background:' + scoreColor(m.admin_score||0) + '">' + Number(m.admin_score||0).toFixed(1) + '</span>'
+    + (m.year ? '<span class="card-year">' + m.year + '</span>' : '') + '</div>'
     + '<div class="card-body"><h3 class="card-title">' + esc(m.title) + '</h3>'
     + '<div class="card-meta">' + (m.year || '—') + ' · ' + esc(m.director || 'реж. не указан') + '</div>'
     + '<div class="card-genres">' + gs + '</div>'
@@ -900,7 +995,8 @@ function gridHTML(){
   return list.map(function(m, i){ return cardHTML(m, i); }).join('');
 }
 function catalogHTML(){
-  return '<section class="catalog" id="catalog">'
+  return '<div class="filmd" style="margin-bottom:46px"></div>'
+    + '<section class="catalog" id="catalog">'
     + '<div class="cat-head reveal"><div><h2 class="disp">Каталог <em>измерений</em></h2>'
     + '<p class="sub">Оценка админа против народного рейтинга IMDb · ' + S.movies.length + ' фильмов</p></div>'
     + '<div class="cat-tools"><input id="search" class="inp" type="search" placeholder="Поиск: название, режиссёр…" value="' + esc(S.q) + '">'
@@ -1130,7 +1226,7 @@ function saveMovie(ev){
       S.movies.unshift(Object.assign({ id: nid, created_at: new Date().toISOString() }, rec));
     }
     demoSave();
-    done(id ? 'Сохранено (демо-режим)' : 'Добавлено (демо-режим)');
+    done(id ? 'Изменения сохранены' : 'Фильм добавлен в каталог');
   }
 }
 function delMovie(id){
@@ -1145,7 +1241,7 @@ function delMovie(id){
     }).catch(function(){ toast('Сервер недоступен', 'err'); });
   } else {
     S.movies = S.movies.filter(function(x){ return String(x.id) !== String(id); });
-    demoSave(); toast('Удалено (демо-режим)'); render();
+    demoSave(); toast('Фильм удалён'); render();
   }
 }
 
@@ -1344,7 +1440,7 @@ function doImport(){
       S.movies.unshift(Object.assign({ id: ++mx, created_at: new Date().toISOString() }, rw, { genres: parseGenres(rw.genres) }));
     });
     demoSave(); S.admin.importRows = null;
-    toast('Импортировано (демо): ' + rows.length); render();
+    toast('Импортировано фильмов: ' + rows.length); render();
   }
 }
 function download(name, content, type){
@@ -1412,7 +1508,7 @@ function tabAdminsHTML(){
           : '<button class="btn btn-danger btn-sm" data-del-admin="' + a.id + '">Удалить</button>') + '</td></tr>';
   }).join('');
   return '<div class="panel reveal in"><div class="panel-head"><h3 class="disp sm">Администраторы</h3>'
-    + '<span class="mono" style="color:var(--mut);font-size:12.5px">' + (S.db ? 'таблица admins в MySQL' : 'демо-режим') + '</span></div>'
+    + '<span class="mono" style="color:var(--mut);font-size:12.5px">' + (S.db ? 'таблица admins в MySQL' : 'локальное хранилище') + '</span></div>'
     + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>ID</th><th>Логин</th><th>Создан</th><th style="text-align:right">Действия</th></tr></thead><tbody>'
     + (rows || '<tr><td colspan="4" class="mono" style="color:var(--mut)">загрузка…</td></tr>') + '</tbody></table></div>'
     + '<div class="stripe-thin stripes" style="margin:24px 0"></div>'
@@ -1448,7 +1544,7 @@ function addAdmin(ev){
     if (exists){ toast('Такой логин уже занят', 'err'); return; }
     admins.push({ id: admins.reduce(function(x,y){ return Math.max(x, y.id); }, 0) + 1, login: login.toLowerCase(), pass: pass, role: 'admin' });
     LS.set('admins', admins);
-    toast('Администратор добавлен (демо)'); f.reset(); loadAdmins();
+    toast('Администратор добавлен'); f.reset(); loadAdmins();
   }
 }
 function delAdmin(id){
@@ -1462,7 +1558,7 @@ function delAdmin(id){
     LS.set('admins', demoAdmins().filter(function(a){
       return a.role !== 'root' && String(a.id) !== String(id);
     }));
-    toast('Удалено (демо)'); loadAdmins();
+    toast('Администратор удалён'); loadAdmins();
   }
 }
 
@@ -1594,7 +1690,22 @@ document.addEventListener('click', function(e){
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
 
+function makeDust(){
+  var box = $('#dust');
+  if (!box || box.childNodes.length) return;
+  for (var i = 0; i < 26; i++){
+    var p = document.createElement('i');
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.animationDuration = (9 + Math.random() * 14) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    var s = 2 + Math.random() * 3;
+    p.style.width = p.style.height = s + 'px';
+    p.style.opacity = 0;
+    box.appendChild(p);
+  }
+}
 function init(){
+  makeDust();
   var s = LS.get('session', null);
   if (s && s.user){ S.admin.user = s.user; S.admin.token = s.token || null; }
   syncHash();                      /* сразу показываем скелетоны загрузки */
