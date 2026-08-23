@@ -675,8 +675,17 @@ function api(action, payload){
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(Object.assign({ action: action }, payload || {}))
   }).then(function(r){
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
+    if (!r.ok){
+      var hint = r.status === 403 ? ' — запрос отклонён защитой хостинга'
+               : r.status === 413 ? ' — файл слишком большой для хостинга'
+               : r.status >= 500  ? ' — ошибка на сервере хостинга' : '';
+      return { ok: false, error: 'Сервер ответил ошибкой HTTP ' + r.status + hint };
+    }
+    return r.json().then(function(d){
+      return d;
+    }).catch(function(){
+      return { ok: false, error: 'Сервер вернул непонятный ответ (HTTP ' + r.status + ')' };
+    });
   });
 }
 function aapi(action, payload){ /* вызов от имени админа */
@@ -799,9 +808,8 @@ function toast(msg, type){
 function renderDbState(){
   var el = $('#dbstate');
   if (!el) return;
-  el.innerHTML = S.db
-    ? '<i class="db-dot on"></i><em>MySQL подключён</em>'
-    : '<i class="db-dot off"></i><em>демо-режим</em>';
+  el.innerHTML = S.db ? '<i class="db-dot on"></i><em>MySQL подключён</em>' : '';
+  el.style.display = S.db ? '' : 'none';
 }
 function renderTicker(){
   var t = $('#ticker-track');
@@ -980,7 +988,7 @@ function loginHTML(){
     + '</form>'
     + '<p class="hint mono">' + (S.db
         ? 'Подключена база MySQL. Стандартный вход: admin / kinometr'
-        : 'База не подключена — демо-режим. Вход: admin / kinometr') + '</p>'
+        : 'Стандартный вход: admin / kinometr') + '</p>'
     + '</div></div></div>';
 }
 function doLogin(ev){
@@ -1002,7 +1010,7 @@ function doLogin(ev){
     if (a && a.pass === pass){
       S.admin.user = { login: a.login, role: a.role };
       LS.set('session', { user: S.admin.user });
-      toast('Добро пожаловать (демо-режим)!');
+      toast('Добро пожаловать, ' + a.login + '!');
       render();
     } else toast('Неверный логин или пароль', 'err');
   }
@@ -1017,7 +1025,7 @@ function dashboardHTML(){
            : tabAdminsHTML();
   return '<div class="admin-shell">'
     + '<div class="adm-head reveal in"><div><h1 class="disp">Админ-панель</h1>'
-    + '<p class="sub mono">' + esc(u.login) + ' · ' + (u.role === 'root' ? 'главный администратор' : 'администратор') + (S.db ? ' · MySQL' : ' · демо-режим') + '</p></div>'
+    + '<p class="sub mono">' + esc(u.login) + ' · ' + (u.role === 'root' ? 'главный администратор' : 'администратор') + (S.db ? ' · MySQL' : '') + '</p></div>'
     + '<div class="adm-actions"><a class="btn btn-ghost" href="#">← На сайт</a>'
     + '<button class="btn btn-ghost" id="logout">Выйти</button></div></div>'
     + '<div class="atabs">' + tabBtn('movies','Фильмы') + tabBtn('import','Импорт') + (u.role === 'root' ? tabBtn('admins','Админы') : '') + '</div>'
@@ -1302,12 +1310,34 @@ function doImport(){
   var rows = importEffective();
   if (!rows.length){ toast('Нет новых фильмов для импорта', 'err'); return; }
   if (S.db){
-    aapi('import', { movies: rows }).then(function(r){
-      if (r && r.ok){
-        S.movies = r.movies; S.admin.importRows = null;
-        toast('Импортировано фильмов: ' + r.added); render();
-      } else toast((r && r.error) || 'Ошибка импорта', 'err');
-    }).catch(function(){ toast('Сервер недоступен', 'err'); });
+    /* отправляем партиями по 10 фильмов: маленькие запросы reliably
+       проходят лимиты и защиту бесплатного хостинга */
+    var CHUNK = 10, done = 0, total = rows.length;
+    function finish(errMsg){
+      if (errMsg) toast(errMsg + (done ? ' · успело добавиться: ' + done + ' из ' + total : ''), 'err');
+      S.admin.importRows = null;
+      loadMovies().then(render);
+    }
+    function step(i){
+      if (i >= total){
+        toast('Импортировано фильмов: ' + done);
+        S.admin.importRows = null;
+        render();
+        return Promise.resolve();
+      }
+      var chunk = rows.slice(i, i + CHUNK);
+      return aapi('import', { movies: chunk }).then(function(r){
+        if (!r || !r.ok){ finish((r && r.error) || 'Ошибка импорта'); return; }
+        done += (r.added || 0);
+        if (total > CHUNK) toast('Импортировано ' + Math.min(i + CHUNK, total) + ' из ' + total + '…');
+        if (i + CHUNK >= total) S.movies = r.movies;
+        return step(i + CHUNK);
+      }).catch(function(e){
+        if (e && e.message === 'auth') return; /* сессию уже обработали */
+        finish('Не удалось связаться с сервером');
+      });
+    }
+    step(0);
   } else {
     var mx = S.movies.reduce(function(a,b){ return Math.max(a, b.id||0); }, 0);
     rows.forEach(function(rw){
