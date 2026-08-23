@@ -158,9 +158,10 @@ button{font-family:inherit}
 .card-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
 .card:hover .card-cover img{transform:scale(1.06)}
 .card-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,12,10,.14),transparent 34%,transparent 70%,rgba(14,12,10,.55))}
-.c-score{position:absolute;top:10px;right:10px;z-index:2;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:rgba(14,12,10,.85);border:2.5px solid var(--sc,#d4a437);color:var(--sc,#d4a437);font:800 14px var(--mono);
-  box-shadow:0 6px 18px rgba(0,0,0,.5),0 0 16px rgba(212,164,55,.18)}
+.mini-gauge{position:absolute;top:9px;right:9px;z-index:2;line-height:0;filter:drop-shadow(0 5px 12px rgba(0,0,0,.55))}
+.ndl-m{transform-box:view-box;transform-origin:32px 32px;transition:transform 1.2s cubic-bezier(.17,.84,.31,1.04)}
+.g-score-m{font:800 14.5px var(--mono);fill:var(--text);text-anchor:middle}
+.g-tick-m{stroke:#6b6252;stroke-width:1.4;stroke-linecap:round}
 .c-year{position:absolute;top:12px;left:10px;z-index:2;font:700 11px var(--mono);color:var(--text);background:rgba(14,12,10,.78);padding:3px 9px;border-radius:6px;letter-spacing:.06em}
 .card-body{padding:15px 16px 16px}
 .card-title{font:800 15.5px/1.35 var(--body);margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:42px;transition:color .2s}
@@ -181,7 +182,9 @@ button{font-family:inherit}
 .preview-grid .card:hover{transform:none;box-shadow:none;border-color:var(--line)}
 
 /* ── пагинация ── */
-.pager{display:flex;justify-content:center;align-items:center;gap:8px;margin:36px 0 8px;flex-wrap:wrap}
+.pager{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:8px;margin:34px 0 6px;flex-wrap:nowrap;
+  background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:13px;padding:12px 18px;
+  box-shadow:0 14px 34px rgba(0,0,0,.35)}
 .pg{min-width:40px;height:40px;padding:0 6px;border:1px solid var(--line);background:var(--panel);color:var(--mut);
   font:700 13px var(--mono);border-radius:9px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center}
 .pg:hover:not(:disabled):not(.on){border-color:var(--brass);color:var(--brass2);transform:translateY(-2px)}
@@ -256,6 +259,10 @@ button{font-family:inherit}
 .inp{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:10px;
   font:600 14px var(--body);transition:.2s;outline:none}
 .inp:focus{border-color:var(--brass);box-shadow:0 0 0 3px rgba(212,164,55,.16)}
+input.inp{-webkit-appearance:none;appearance:none}
+input[type=search].inp::-webkit-search-decoration,input[type=search].inp::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+#search{padding-left:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23a89f90' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center}
+#search:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23d4a437' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E")}
 textarea.inp{resize:vertical;font-size:13px}
 select.inp{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d4a437' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 .lbl{display:block;font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;color:var(--mut);margin-bottom:7px}
@@ -365,7 +372,16 @@ footer .stripes{height:5px}
   .m-meta{grid-template-columns:1fr}
   .panel{padding:20px 16px}
   .cat-head h2{font-size:34px}
-  .pg{min-width:36px;height:36px}
+  .cat-tools{flex-direction:column;min-width:0;gap:10px;width:100%}
+  .sort{width:100%}
+  .inp{font-size:16px;padding:13px 15px}
+  #search{min-height:50px;background-position:14px center}
+  select.inp{min-height:50px}
+  .pg{min-width:44px;height:44px}
+  .pg.nav{padding:0 13px;font-size:12px}
+  .pager{flex-wrap:wrap;gap:6px;padding:12px 10px}
+  .chips{gap:7px}
+  .chip{padding:8px 14px}
   .foot-in{justify-content:center;text-align:center}
   #toasts{left:14px;right:14px}
   .toast{max-width:none}
@@ -448,6 +464,10 @@ var LS = {
 };
 
 var PAGE_SIZE = 12;
+function pageSize(){ /* на телефоне — 6 карточек на страницу, на компе — 12 */
+  try { if (window.matchMedia && window.matchMedia('(max-width:640px)').matches) return 6; } catch(e){}
+  return PAGE_SIZE;
+}
 
 /* стартовый каталог */
 var SEED = [
@@ -618,10 +638,35 @@ function dialSVG(score, size, label){
     + '<text x="100" y="159" class="g-lab">' + (label || 'оценка админа') + '</text>'
     + '</svg>';
 }
+function miniGauge(score, size){
+  score = Math.max(0, Math.min(10, Number(score) || 0));
+  var cx = 32, cy = 32, a0 = 135, sw = 270, r = 24, i, t, p1, p2, ticks = '';
+  function P(rr, a){ var d = a * Math.PI / 180; return [cx + rr * Math.cos(d), cy + rr * Math.sin(d)]; }
+  function A(rr, a1, a2){
+    var q1 = P(rr, a1), q2 = P(rr, a2), lg = (a2 - a1) > 180 ? 1 : 0;
+    return 'M' + q1[0].toFixed(1) + ' ' + q1[1].toFixed(1) + ' A' + rr + ' ' + rr + ' 0 ' + lg + ' 1 ' + q2[0].toFixed(1) + ' ' + q2[1].toFixed(1);
+  }
+  for (i = 0; i <= 10; i++){
+    t = a0 + (i / 10) * sw;
+    p1 = P(i % 5 === 0 ? 19.5 : 21.5, t); p2 = P(24, t);
+    ticks += '<line x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '" class="g-tick-m" opacity="' + (i % 5 === 0 ? '.9' : '.45') + '"/>';
+  }
+  var ang = a0 + (score / 10) * sw, col = scoreColor(score);
+  return '<svg viewBox="0 0 64 64" style="width:' + size + 'px;height:' + size + 'px" role="img" aria-label="Оценка ' + score.toFixed(1) + ' из 10">'
+    + '<circle cx="32" cy="32" r="30.5" fill="rgba(14,12,10,.9)" stroke="' + col + '" stroke-opacity=".55" stroke-width="2"/>'
+    + '<path d="' + A(r, a0, a0 + sw) + '" fill="none" stroke="#3a332a" stroke-width="3.4" stroke-linecap="round"/>'
+    + '<path d="' + A(r, a0 + 2, Math.max(a0 + 2.1, ang - 1)) + '" fill="none" stroke="' + col + '" stroke-width="3.4" stroke-linecap="round"/>'
+    + ticks
+    + '<g class="ndl-m" data-final="' + ang.toFixed(1) + '" style="transform:rotate(' + a0 + 'deg)">'
+    + '<polygon points="32,30.6 32,33.4 50,32" fill="#efe6d8"/>'
+    + '<circle cx="32" cy="32" r="3" fill="' + col + '" stroke="#14110d" stroke-width="1.4"/></g>'
+    + '<text x="32" y="50" class="g-score-m">' + score.toFixed(1) + '</text>'
+    + '</svg>';
+}
 function animateDials(){
   requestAnimationFrame(function(){
     requestAnimationFrame(function(){
-      $$('.ndl').forEach(function(n){ n.style.transform = 'rotate(' + n.getAttribute('data-final') + 'deg)'; });
+      $$('.ndl,.ndl-m').forEach(function(n){ n.style.transform = 'rotate(' + n.getAttribute('data-final') + 'deg)'; });
     });
   });
 }
@@ -745,7 +790,7 @@ function cardHTML(m, i, isStatic){
   return '<article class="card reveal" style="transition-delay:' + ((i % 8) * 55) + 'ms"' + (isStatic ? '' : ' data-open="' + m.id + '"') + '>'
     + '<div class="card-stripe stripes"></div>'
     + '<div class="card-cover"><img loading="lazy" src="' + esc(m.cover_url || '') + '" alt="' + esc(m.title) + '" data-t="' + esc(m.title) + '" onerror="this.onerror=null;this.src=ph(this.dataset.t)">'
-    + '<span class="c-score" style="--sc:' + sc + '">' + Number(m.admin_score||0).toFixed(1) + '</span>'
+    + '<span class="mini-gauge">' + miniGauge(m.admin_score||0, 58) + '</span>'
     + (m.year ? '<span class="c-year">' + m.year + '</span>' : '') + '</div>'
     + '<div class="card-body"><h3 class="card-title">' + esc(m.title) + '</h3>'
     + '<div class="card-meta mono">' + esc(m.director || 'реж. не указан') + '</div>'
@@ -755,7 +800,8 @@ function cardHTML(m, i, isStatic){
     + '</div></article>';
 }
 function pagerHTML(list){
-  var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  var PS = pageSize();
+  var pages = Math.max(1, Math.ceil(list.length / PS));
   if (S.page > pages) S.page = pages;
   if (pages <= 1) return '';
   var out = '<div class="pager">';
@@ -769,21 +815,22 @@ function pagerHTML(list){
   if (to < pages) out += (to < pages - 1 ? '<span class="mono" style="color:var(--mut)">…</span>' : '') + '<button class="pg" data-page="' + pages + '">' + pages + '</button>';
   out += '<button class="pg nav" data-page="' + (S.page + 1) + '"' + (S.page === pages ? ' disabled' : '') + '>Вперёд →</button>';
   out += '<div class="pager-info">страница ' + S.page + ' из ' + pages + ' · показано '
-    + Math.min(PAGE_SIZE, list.length - (S.page - 1) * PAGE_SIZE) + ' из ' + list.length + '</div></div>';
+    + Math.min(PS, list.length - (S.page - 1) * PS) + ' из ' + list.length + '</div></div>';
   return out;
 }
 function gridHTML(){
   var list = filtered();
   if (!list.length) return '<div class="empty mono">Ничего не нашлось — попробуйте сбросить фильтры.</div>';
-  var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  var PS = pageSize();
+  var pages = Math.max(1, Math.ceil(list.length / PS));
   if (S.page > pages) S.page = pages;
-  var slice = list.slice((S.page - 1) * PAGE_SIZE, S.page * PAGE_SIZE);
+  var slice = list.slice((S.page - 1) * PS, S.page * PS);
   return slice.map(function(m, i){ return cardHTML(m, i); }).join('') + pagerHTML(list);
 }
 function catalogHTML(){
   return '<section class="catalog" id="catalog">'
     + '<div class="cat-head reveal"><div><h2 class="disp">Каталог <em>измерений</em></h2>'
-    + '<p class="sub">Вердикт админа против народного рейтинга IMDb · ' + S.movies.length + ' фильмов · по ' + PAGE_SIZE + ' на странице</p></div>'
+    + '<p class="sub">Вердикт админа против народного рейтинга IMDb · ' + S.movies.length + ' фильмов · по ' + pageSize() + ' на странице</p></div>'
     + '<div class="cat-tools"><input id="search" class="inp" type="search" placeholder="Поиск: название, режиссёр…" value="' + esc(S.q) + '">'
     + '<select id="sort" class="inp sort">'
     + '<option value="new"'   + (S.sort==='new'   ? ' selected' : '') + '>Сначала новые</option>'
@@ -1489,6 +1536,14 @@ function init(){
   var s = LS.get('session', null);
   if (s && s.user){ S.admin.user = s.user; S.admin.token = s.token || null; }
   makeDust();
+  var lastPS = pageSize(), rzT = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(rzT);
+    rzT = setTimeout(function(){
+      var ps = pageSize();
+      if (ps !== lastPS){ lastPS = ps; if (S.view === 'site' && !S.loading) render(); }
+    }, 250);
+  });
   syncHash();
   api('ping').then(function(p){
     S.db = !!(p && p.ok && p.db);
